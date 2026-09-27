@@ -89,6 +89,7 @@ type DiagnosticsService struct {
 	db              *pgxpool.Pool
 	telemetry       DiagnosticsTelemetryReader
 	drilldown       DrilldownTelemetryReader
+	userSearch      UserSearchReader
 	references      *subjectReferenceCodec
 	sensitiveBudget OperationBudget
 	volume          DrilldownVolumeBudget
