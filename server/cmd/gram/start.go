@@ -1750,8 +1750,10 @@ func newStartCommand() *cli.Command {
 				riskAnalysisDescriber = riskSignaler
 			}
 			var riskFindings platformmcp.RiskFindingsReader
+			var skillInsights platformmcp.SkillInsightsReader
 			if chDB != nil {
 				riskFindings = riskchrepo.New(chDB)
+				skillInsights = telemetryrepo.New(chDB)
 			}
 			platformMCPAssistant, err := configurePlatformMCP(ctx, platformMCPConfig{
 				Logger:                  logger,
@@ -1784,6 +1786,7 @@ func newStartCommand() *cli.Command {
 				PublicationRequests:     plugins.PublicationRequests{Enabled: publicationEmit},
 				TemporalEnv:             temporalEnv,
 				Skills:                  skillsService,
+				SkillInsights:           skillInsights,
 				RiskPolicyApprovals:     mcpApprovalService,
 				RiskPolicySignaler:      riskSignaler,
 				RiskPolicyCache:         shadowMCPClient,

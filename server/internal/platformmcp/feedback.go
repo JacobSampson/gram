@@ -427,5 +427,6 @@ var knownPlatformMCPToolNames = map[string]struct{}{
 	"add_skill_version":                     {},
 	"update_skill_metadata":                 {},
 	"distribute_skill":                      {},
+	"get_skill_insights":                    {},
 	"send_platform_mcp_feedback":            {},
 }
