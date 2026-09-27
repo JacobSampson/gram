@@ -1772,6 +1772,13 @@ func newStartCommand() *cli.Command {
 				riskFindings = riskchrepo.New(chDB)
 				toolUsage = telemetryrepo.New(chDB)
 			}
+			// Gated the same way: telemetryrepo.New wraps a nil connection without
+			// complaint, and a live search over no ClickHouse would fail on every
+			// call instead of serving the readable unavailable stub.
+			var toolCallSearch platformmcp.ToolCallSearchReader
+			if chDB != nil {
+				toolCallSearch = telemetryrepo.New(chDB)
+			}
 			platformMCPAssistant, err := configurePlatformMCP(ctx, platformMCPConfig{
 				Logger:                   logger,
 				MeterProvider:            meterProvider,
@@ -1811,7 +1818,7 @@ func newStartCommand() *cli.Command {
 				RiskFindings:             riskFindings,
 				Telemetry:                telemetryrepo.New(chDB),
 				ToolUsage:                toolUsage,
-				ToolCallSearch:           telemetryrepo.New(chDB),
+				ToolCallSearch:           toolCallSearch,
 				TelemetryDrilldown:       telemetryrepo.New(chDB),
 				WorkflowRun:              posthogClient,
 				CanonicalIdentity:        telemSvc,
