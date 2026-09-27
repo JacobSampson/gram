@@ -211,6 +211,7 @@ func newServerWithRiskMutations(reader Reader, catalog Catalog, registrations *R
 			"Registration never distributes an MCP: use list_plugins to show the project's plugins, ask the user which one should carry it, then call distribute_mcp_to_plugin naming that plugin exactly. There is no implicit default.",
 			"To change an existing MCP server or gateway address or network access, first read its exact connection settings in the selected project. Show the current and proposed address or mode, and wait for explicit confirmation before changing it. Re-read that same target afterwards. A publication request means the plugin update was requested, not that its packages or downstream users have converged; verify the publication evidence before reporting completion.",
 			"Creating a data export is a mutation: first show the exact project, endpoint, data source, enabled state, and sensitive-data policy, then ask for explicit confirmation. Never request or accept authorization header values in chat; create the export without headers and send the user to the returned management URL to add authentication securely.",
+			"Chat listings are metadata only: when a conversation happened, how long it ran, which app produced it, whether risk analysis found anything, and a masked participant. Never present a chat's title or what was said as known, and send the user to the dashboard to read a transcript.",
 		}, "\n\n"),
 		PageSize: 32,
 	})
@@ -377,6 +378,19 @@ func newServerWithRiskMutations(reader Reader, catalog Catalog, registrations *R
 		registerUnavailableSessionRecallTools(reg)
 	} else {
 		registerSessionRecallTools(reg, sessionRecall)
+	}
+	// Registered beside session recall: recall serves a caller their own
+	// transcript as a digest, the listing serves an administrator every chat's
+	// metadata, and the two together are the whole of what this server says
+	// about conversations.
+	var chatMetadata *ChatMetadataService
+	if postgresReader, ok := reader.(*PostgresReader); ok {
+		chatMetadata = postgresReader.chatMetadata
+	}
+	if !chatMetadata.valid() {
+		registerUnavailableChatMetadataTools(reg)
+	} else {
+		registerChatMetadataTools(reg, chatMetadata)
 	}
 	if feedback == nil {
 		addTool(reg, &mcp.Tool{

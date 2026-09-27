@@ -341,6 +341,7 @@ type PostgresReader struct {
 	riskReads           *RiskReadService
 	riskAnalysisStatus  *RiskAnalysisStatusService
 	riskFindings        riskFindingsLister
+	chatMetadata        *ChatMetadataService
 	dataExports         *DataExportReadService
 	dataExportMutations *dataExportMutationService
 	recentToolCalls     *RecentToolCallReadService
@@ -364,6 +365,7 @@ func NewPostgresReader(logger *slog.Logger, db *pgxpool.Pool) *PostgresReader {
 		riskReads:           nil,
 		riskAnalysisStatus:  nil,
 		riskFindings:        nil,
+		chatMetadata:        nil,
 		dataExports:         nil,
 		dataExportMutations: nil,
 		recentToolCalls:     nil,
@@ -480,6 +482,15 @@ func (r *PostgresReader) WithRiskAnalysisStatus(service *RiskAnalysisStatusServi
 func (r *PostgresReader) WithRiskFindings(service *RiskFindingsService, budget OperationBudget) *PostgresReader {
 	if r != nil && service.valid() {
 		r.riskFindings = &budgetedRiskFindings{service: service, budget: budget}
+	}
+	return r
+}
+
+// WithChatMetadata attaches the metadata-only chat listing. A nil or
+// incomplete service leaves list_chats served as a stub.
+func (r *PostgresReader) WithChatMetadata(service *ChatMetadataService) *PostgresReader {
+	if r != nil && service.valid() {
+		r.chatMetadata = service
 	}
 	return r
 }
