@@ -1811,6 +1811,7 @@ func newStartCommand() *cli.Command {
 				RiskFindings:             riskFindings,
 				Telemetry:                telemetryrepo.New(chDB),
 				ToolUsage:                toolUsage,
+				ToolCallSearch:           telemetryrepo.New(chDB),
 				TelemetryDrilldown:       telemetryrepo.New(chDB),
 				WorkflowRun:              posthogClient,
 				CanonicalIdentity:        telemSvc,

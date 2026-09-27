@@ -94,6 +94,7 @@ type DiagnosticsService struct {
 	telemetry       DiagnosticsTelemetryReader
 	drilldown       DrilldownTelemetryReader
 	toolUsage       ToolUsageBreakdownReader
+	search          ToolCallSearchReader
 	references      *subjectReferenceCodec
 	sensitiveBudget OperationBudget
 	volume          DrilldownVolumeBudget
