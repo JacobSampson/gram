@@ -175,6 +175,7 @@ import (
 	"github.com/speakeasy-api/gram/server/internal/trialemails"
 	"github.com/speakeasy-api/gram/server/internal/triggers"
 	"github.com/speakeasy-api/gram/server/internal/tunneledmcp"
+	"github.com/speakeasy-api/gram/server/internal/tunnelmetrics"
 	"github.com/speakeasy-api/gram/server/internal/unproxiedmcp"
 	"github.com/speakeasy-api/gram/server/internal/usage"
 	"github.com/speakeasy-api/gram/server/internal/usersessions"
@@ -325,6 +326,7 @@ const probeDrainTimeout = 20 * time.Second
 
 func mcpRuntimeFlags() []cli.Flag {
 	flags := []cli.Flag{
+		&cli.BoolFlag{Name: "tunnel-metrics-enabled", Usage: "Collect aggregate tunnel request metrics and serve tunnel activity history", EnvVars: []string{"GRAM_TUNNEL_METRICS_ENABLED"}},
 		pluginPublicationEmitFlag(),
 		&cli.StringSliceFlag{
 			Name:    "platform-hosts",
@@ -1163,7 +1165,8 @@ func newStartCommand() *cli.Command {
 				mcpriskscan.DefaultPolicyConfig,
 			)
 			mcpService, err := newMCPService(c, mcpServiceDependencies{
-				Logger: logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
+				TunnelMetrics: newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled")),
+				Logger:        logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
 				Sessions: sessionManager, ChatSessions: chatSessionsManager, Environment: env,
 				Posthog: posthogClient, Features: featureFlags, ServerURL: serverURL, SiteURL: siteURL,
 				Encryption: encryptionClient, Guardian: guardianPolicy, Functions: functionsOrchestrator,
@@ -1690,7 +1693,10 @@ func newStartCommand() *cli.Command {
 			remotemcp.Attach(mux, remotemcp.NewService(logger, tracerProvider, db, sessionManager, encryptionClient, authzEngine, guardianPolicy, auditLogger, mcpServersService).
 				WithDistributionAdmission(distributionAdmission))
 			unproxiedmcp.Attach(mux, unproxiedmcp.NewService(logger, tracerProvider, db, sessionManager, authzEngine, guardianPolicy, auditLogger))
-			tunneledmcp.Attach(mux, tunneledmcp.NewService(logger, tracerProvider, db, sessionManager, authzEngine, auditLogger, route.NewRedis(redisClient), redisClient))
+			tunnelService := tunneledmcp.NewService(logger, tracerProvider, db, sessionManager, authzEngine, auditLogger, route.NewRedis(redisClient), redisClient)
+			tunnelService.Metrics = tunnelmetrics.NewStore(chDB)
+			tunnelService.MetricsEnabled = c.Bool("tunnel-metrics-enabled")
+			tunneledmcp.Attach(mux, tunnelService)
 			mcpRuntime, err := buildMCPServerRuntime(mcpServerRuntimeDependencies{
 				Logger:     logger,
 				DB:         db,

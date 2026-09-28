@@ -310,7 +310,8 @@ func runMCPServer(c *cli.Context, shutdown *mcpServerShutdown) error {
 		return err
 	}
 	mcpService, err := newMCPService(c, mcpServiceDependencies{
-		Logger: logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
+		TunnelMetrics: newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled")),
+		Logger:        logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
 		Sessions: sessionManager, ChatSessions: chatSessions, Environment: env,
 		Posthog: posthogClient, Features: featureFlags, ServerURL: serverURL, SiteURL: siteURL,
 		Encryption: enc, Guardian: guardianPolicy, Functions: functionsOrchestrator,

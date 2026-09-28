@@ -53,12 +53,18 @@ func main() {
 	}
 	defer keys.Close()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	collector := startMetrics(ctx, logger)
+
 	gw, err := gateway.New(gateway.Config{
 		AdvertiseAddr: advertiseAddr,
 		// MaxStreamsPerTunnel left unset: gateway.New applies its
 		// defaultMaxStreamsPerTunnel so the cap has a single source of truth.
-		MaxSessions:  maxSessions,
-		ForwardToken: forwardToken,
+		MaxSessions:        maxSessions,
+		ForwardToken:       forwardToken,
+		DiagnosticsEnabled: os.Getenv("TUNNEL_DIAGNOSTICS_ENABLED") == "1",
+		Metrics:            collector,
 	}, keys, routes, logger)
 	if err != nil {
 		logger.ErrorContext(context.Background(), "tunnel-gateway init failed", slog.Any("error", err))
@@ -76,8 +82,7 @@ func main() {
 		ReadHeaderTimeout: 15 * time.Second,
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	go gw.RunMetrics(ctx)
 
 	var shutdownOnce sync.Once
 	shutdownDone := make(chan struct{})

@@ -1,0 +1,12 @@
+syntax = "proto3";
+package gram.tunnel.v1;
+import "gcp/pubsub/v1/options.proto";
+option go_package = "github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1";
+message MetricsCHWriter {
+  option (gcp.pubsub.v1.subscription) = {
+    topic: "gram.tunnel.v1.MetricsSnapshot"
+    ack_deadline: {seconds: 30}
+    retry_policy: {minimum_backoff: {seconds: 10} maximum_backoff: {seconds: 600}}
+    dead_letter: {max_delivery_attempts: 5}
+  };
+}

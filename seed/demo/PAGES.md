@@ -140,6 +140,10 @@ integration. All IDs reuse `Spec.NameSeed` and retarget with the tenant.
 Reseeding deletes bindings before sessions, issuers, agents and projects.
 Browser verification: `[~]` (not yet verified); see check 18 in `verify.md`.
 
+## Tunnel source observability
+
+The Private inventory tunnel source has one linked private MCP server and deterministic 24-hour request/connection history with a recent gap. It is intentionally disconnected; no synthetic agent reaches a private target. Open its Overview with `gram-tunnel-observability` enabled and verify charts, the gap, and the no-agent diagnostic state.
+
 ## Local only (RunLocalFixtures, never the demo org)
 
 These come from `server/internal/demoseed/local.go` after the seed, so they are

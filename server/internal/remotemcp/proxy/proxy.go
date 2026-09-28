@@ -150,6 +150,7 @@ type UpstreamResponseRetryer func(ctx context.Context, resp *http.Response) (*Up
 // request so the SessionID and interceptor state stay tied to a single
 // client exchange.
 type Proxy struct {
+	RequestObserver RequestObserver
 	// GuardianPolicy is used to build a fresh, non-pooled HTTP client per
 	// upstream request. Pooling is inappropriate here because each Proxy
 	// instance handles a single upstream host and discards the connection
@@ -521,6 +522,20 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 		return oops.E(oops.CodeBadRequest, parseErr, "invalid jsonrpc request").LogError(ctx, p.Logger)
 	}
 
+	ctx, observation := beginObservation(ctx, p.RequestObserver, userReq)
+	defer func() {
+		if observation == nil {
+			return
+		}
+		outcome := "incomplete"
+		if r.Context().Err() != nil {
+			outcome = "canceled"
+		} else if err != nil || upstreamStatus >= 400 {
+			outcome = "error"
+		}
+		observation.finish(outcome)
+	}()
+
 	// Extract the originating request id once. Used as the correlation id
 	// on any rejection envelope written back to the user — invalid id
 	// (notification) leads writeRejection to omit the field and use HTTP
@@ -694,6 +709,9 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 	defer o11y.NoLogDefer(upstreamResp.Body.Close)
 
 	upstreamStatus = upstreamResp.StatusCode
+	if upstreamStatus >= 400 {
+		observation.finish("error")
+	}
 	span.SetAttributes(attr.RemoteMCPProxyRemoteStatusCode(upstreamStatus))
 
 	if p.UpstreamResponseInterceptor != nil {
@@ -871,6 +889,7 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
+	observeResponse(ctx, msg)
 	return nil
 }
 
@@ -1253,6 +1272,7 @@ func (p *Proxy) relaySSEStream(
 				return fmt.Errorf("write substitute sse event: %w", writeErr)
 			}
 			total += int64(len(substitute))
+			observeRejection(ctx)
 			if flusher != nil {
 				flusher.Flush()
 			}
@@ -1279,6 +1299,7 @@ func (p *Proxy) relaySSEStream(
 			return fmt.Errorf("stream sse event: %w", writeErr)
 		}
 		total += int64(len(emit))
+		observeResponse(ctx, msg)
 		if flusher != nil {
 			flusher.Flush()
 		}
@@ -1561,6 +1582,7 @@ func (p *Proxy) runUserRequestInterceptors(ctx context.Context, req *UserRequest
 // cause [oops.ErrHandle] to attempt a second WriteHeader on top of the
 // one this helper already issued.
 func (p *Proxy) writeRejection(ctx context.Context, w http.ResponseWriter, span trace.Span, id jsonrpc.ID, cause error) int64 {
+	observeRejection(ctx)
 	rejectErr := RejectErrorFromCause(cause)
 	payload, err := marshalErrorResponse(id, rejectErr)
 	if err != nil {

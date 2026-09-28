@@ -21,7 +21,6 @@ import (
 	"goa.design/goa/v3/security"
 
 	srv "github.com/speakeasy-api/gram/server/gen/http/tunneled_mcp/server"
-
 	gen "github.com/speakeasy-api/gram/server/gen/tunneled_mcp"
 	"github.com/speakeasy-api/gram/server/gen/types"
 	"github.com/speakeasy-api/gram/server/internal/attr"
@@ -37,18 +36,21 @@ import (
 	"github.com/speakeasy-api/gram/server/internal/o11y"
 	"github.com/speakeasy-api/gram/server/internal/oops"
 	"github.com/speakeasy-api/gram/server/internal/tunneledmcp/repo"
+	"github.com/speakeasy-api/gram/server/internal/tunnelmetrics"
 	"github.com/speakeasy-api/gram/server/internal/urn"
 	"github.com/speakeasy-api/gram/tunnel/route"
 )
 
 type Service struct {
-	tracer        trace.Tracer
-	logger        *slog.Logger
-	db            *pgxpool.Pool
-	auth          *auth.Auth
-	authz         *authz.Engine
-	audit         *audit.Logger
-	tunnelManager *tunnelManager
+	Metrics        *tunnelmetrics.Store
+	MetricsEnabled bool
+	tracer         trace.Tracer
+	logger         *slog.Logger
+	db             *pgxpool.Pool
+	auth           *auth.Auth
+	authz          *authz.Engine
+	audit          *audit.Logger
+	tunnelManager  *tunnelManager
 	// redisClient revokes live anonymous MCP sessions when public consent is
 	// withdrawn. Nil disables that best-effort cleanup (the serve path's
 	// consent guard still rejects per-request).
@@ -71,14 +73,16 @@ func NewService(
 	logger = logger.With(attr.SlogComponent("tunneledmcp"))
 
 	return &Service{
-		tracer:        tracerProvider.Tracer("github.com/speakeasy-api/gram/server/internal/tunneledmcp"),
-		logger:        logger,
-		db:            db,
-		auth:          auth.New(logger, db, sessions, authzEngine),
-		authz:         authzEngine,
-		audit:         auditLogger,
-		tunnelManager: newTunnelManager(runtime),
-		redisClient:   redisClient,
+		Metrics:        nil,
+		MetricsEnabled: false,
+		tracer:         tracerProvider.Tracer("github.com/speakeasy-api/gram/server/internal/tunneledmcp"),
+		logger:         logger,
+		db:             db,
+		auth:           auth.New(logger, db, sessions, authzEngine),
+		authz:          authzEngine,
+		audit:          auditLogger,
+		tunnelManager:  newTunnelManager(runtime),
+		redisClient:    redisClient,
 	}
 }
 

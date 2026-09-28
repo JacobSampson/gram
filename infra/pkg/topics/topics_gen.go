@@ -16,6 +16,7 @@ import (
 	pluginsv1 "github.com/speakeasy-api/gram/infra/gen/gram/plugins/v1"
 	riskv1 "github.com/speakeasy-api/gram/infra/gen/gram/risk/v1"
 	telemetryv1 "github.com/speakeasy-api/gram/infra/gen/gram/telemetry/v1"
+	tunnelv1 "github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1"
 	webhooksv1 "github.com/speakeasy-api/gram/infra/gen/gram/webhooks/v1"
 	"github.com/speakeasy-api/gram/infra/pkg/gcp"
 )
@@ -73,6 +74,8 @@ const (
 	GramRiskV1PromptPolicyAnalysis Topic = "gram.risk.v1.PromptPolicyAnalysis"
 	// GramTelemetryV1LogRecord publishes to gram-telemetry-v1-log-record.
 	GramTelemetryV1LogRecord Topic = "gram.telemetry.v1.LogRecord"
+	// GramTunnelV1MetricsSnapshot publishes to gram-tunnel-v1-metrics-snapshot.
+	GramTunnelV1MetricsSnapshot Topic = "gram.tunnel.v1.MetricsSnapshot"
 	// GramWebhooksV1Event publishes to gram-webhooks-v1-event.
 	GramWebhooksV1Event Topic = "gram.webhooks.v1.Event"
 )
@@ -103,6 +106,7 @@ func All() []Topic {
 		GramRiskV1PromptInjectionAnalysis,
 		GramRiskV1PromptPolicyAnalysis,
 		GramTelemetryV1LogRecord,
+		GramTunnelV1MetricsSnapshot,
 		GramWebhooksV1Event,
 	}
 }
@@ -156,6 +160,8 @@ func Lookup(name string) (Topic, bool) {
 		return GramRiskV1PromptPolicyAnalysis, true
 	case GramTelemetryV1LogRecord:
 		return GramTelemetryV1LogRecord, true
+	case GramTunnelV1MetricsSnapshot:
+		return GramTunnelV1MetricsSnapshot, true
 	case GramWebhooksV1Event:
 		return GramWebhooksV1Event, true
 	default:
@@ -215,6 +221,8 @@ func newPublisher(ctx context.Context, broker gcp.PublisherBroker, topic Topic, 
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &riskv1.PromptPolicyAnalysis{}, gcp.WithEncodedPublishSettings(settings))
 	case GramTelemetryV1LogRecord:
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &telemetryv1.LogRecord{}, gcp.WithEncodedPublishSettings(settings))
+	case GramTunnelV1MetricsSnapshot:
+		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &tunnelv1.MetricsSnapshot{}, gcp.WithEncodedPublishSettings(settings))
 	case GramWebhooksV1Event:
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &webhooksv1.Event{}, gcp.WithEncodedPublishSettings(settings))
 	default:
