@@ -39,6 +39,9 @@ vi.mock("sonner", () => ({
 vi.mock("@/pages/organization/OnboardingStack", () => ({
   OnboardingStack: () => <p>Stack form</p>,
 }));
+vi.mock("@/pages/organization/OnboardingPlaybook", () => ({
+  OnboardingPlaybook: () => <p>Playbook view</p>,
+}));
 
 vi.mock("@/lib/gramAdminApi", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/gramAdminApi")>();
@@ -187,7 +190,7 @@ describe("Overview", () => {
     ).toBeNull();
   });
 
-  it("holds the stack between the details and the danger zone", async () => {
+  it("holds the playbook as a details row and the stack between the details and the danger zone", async () => {
     await renderRouteTree(routeTree, {
       initialPath: `/organizations/${ORG.slug}`,
     });
@@ -195,11 +198,17 @@ describe("Overview", () => {
     await screen.findByRole("heading", { name: "Details" });
     const stack = panelNamed("Stack");
     expect(within(stack).getByText("Stack form")).toBeTruthy();
+    // The playbook is a row under Whitelisted, not a panel of its own.
+    expect(valueBeside("Playbook").textContent).toBe("Playbook view");
+    const labels = Array.from(
+      panelNamed("Details").querySelectorAll('[data-slot="field-label"]'),
+    ).map((label) => label.textContent);
+    expect(labels.indexOf("Playbook")).toBe(labels.indexOf("Whitelisted") + 1);
     const order = screen
       .getAllByRole("heading", { level: 5 })
       .map((heading) => heading.textContent)
       .filter((name) =>
-        ["Details", "Stack", "Danger zone"].includes(name ?? ""),
+        ["Details", "Playbook", "Stack", "Danger zone"].includes(name ?? ""),
       );
     expect(order).toEqual(["Details", "Stack", "Danger zone"]);
   });
