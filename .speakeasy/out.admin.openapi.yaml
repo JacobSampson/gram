@@ -4259,7 +4259,7 @@ paths:
         name: AdminGetSupportCoverage
   /admin/supportMatrix.get:
     get:
-      description: Read the shared support catalog and product coverage.
+      description: 'Read the support matrix the server was built with. It is code, changed by pull request: server/internal/supportmatrix/matrix.yaml.'
       operationId: adminGetSupportMatrix
       responses:
         "200":
@@ -4328,83 +4328,6 @@ paths:
       x-speakeasy-name-override: getSupportMatrix
       x-speakeasy-react-hook:
         name: AdminGetSupportMatrix
-  /admin/supportMatrix.update:
-    post:
-      description: Save coverage against the last read revision; rejects concurrent changes.
-      operationId: adminUpdateSupportMatrix
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSupportMatrixRequestBody'
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupportMatrix'
-          description: OK response.
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'bad_request: request is invalid'
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'unauthorized: unauthorized access'
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'forbidden: permission denied'
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'not_found: resource not found'
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'conflict: resource already exists'
-        "415":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'unsupported_media: unsupported media type'
-        "422":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'invalid: request contains one or more invalidation fields'
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'unexpected: an unexpected error occurred'
-        "502":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: 'gateway_error: an unexpected error occurred'
-      summary: updateSupportMatrix admin
-      tags:
-        - admin
-      x-speakeasy-name-override: updateSupportMatrix
-      x-speakeasy-react-hook:
-        name: AdminUpdateSupportMatrix
   /admin/trial.changeEndDate:
     post:
       tags:
@@ -6698,6 +6621,32 @@ components:
       required:
         - id
         - days
+    SupportAccounts:
+      type: object
+      properties:
+        enterprise:
+          type: string
+          enum:
+            - supported
+            - unsupported
+            - unknown
+        personal:
+          type: string
+          enum:
+            - supported
+            - unsupported
+            - unknown
+        team:
+          type: string
+          enum:
+            - supported
+            - unsupported
+            - unknown
+      description: Which account types can use a method on a platform.
+      required:
+        - personal
+        - team
+        - enterprise
     SupportCapability:
       type: object
       properties:
@@ -6804,22 +6753,6 @@ components:
       required:
         - hook_source
         - sessions
-    SupportDraft:
-      type: object
-      properties:
-        mappings:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/SupportMapping'
-        references:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              $ref: '#/components/schemas/SupportFact'
-      required:
-        - mappings
-        - references
     SupportFact:
       type: object
       properties:
@@ -6841,26 +6774,6 @@ components:
         - status
         - note
         - verify
-    SupportMapping:
-      type: object
-      properties:
-        applicability:
-          type: string
-          enum:
-            - unknown
-            - applicable
-            - na
-        conditions:
-          type: string
-          maxLength: 10000
-        facts:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/SupportFact'
-      required:
-        - applicability
-        - conditions
-        - facts
     SupportMatrix:
       type: object
       properties:
@@ -6868,29 +6781,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SupportCapability'
-        draft:
-          $ref: '#/components/schemas/SupportDraft'
         methods:
           type: array
           items:
             $ref: '#/components/schemas/SupportMethod'
-        products:
+        platforms:
           type: array
           items:
             $ref: '#/components/schemas/SupportPlatform'
         revision:
           type: string
+          description: Hex SHA-256 of the deployed matrix file.
       required:
-        - methods
-        - products
         - capabilities
-        - draft
+        - platforms
+        - methods
         - revision
     SupportMethod:
       type: object
       properties:
-        facts:
+        claims:
           type: object
+          description: What the method delivers per capability, platform aside.
           additionalProperties:
             $ref: '#/components/schemas/SupportFact'
         id:
@@ -6899,6 +6811,11 @@ components:
           type: string
         plans:
           type: string
+        platforms:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportPlatformSupport'
+          description: Every platform once, in the matrix's platform order.
         vendor:
           type: string
       required:
@@ -6906,7 +6823,27 @@ components:
         - name
         - vendor
         - plans
-        - facts
+        - claims
+        - platforms
+    SupportOS:
+      type: object
+      properties:
+        linux:
+          type: string
+          enum:
+            - supported
+            - verify
+        mac:
+          type: string
+          enum:
+            - supported
+            - verify
+        windows:
+          type: string
+          enum:
+            - supported
+            - verify
+      description: What is known per operating system; an absent one is unknown.
     SupportPlatform:
       type: object
       properties:
@@ -6926,6 +6863,36 @@ components:
         - vendor
         - family
         - surface
+    SupportPlatformSupport:
+      type: object
+      properties:
+        accounts:
+          $ref: '#/components/schemas/SupportAccounts'
+        applicability:
+          type: string
+          enum:
+            - unknown
+            - applicable
+            - na
+        cells:
+          type: object
+          description: One fact per capability when the method applies; empty otherwise, meaning not applicable or unknown everywhere.
+          additionalProperties:
+            $ref: '#/components/schemas/SupportFact'
+        note:
+          type: string
+          maxLength: 10000
+        os:
+          $ref: '#/components/schemas/SupportOS'
+        platform:
+          type: string
+      description: 'One method on one platform: whether it applies, who can use it, and one cell per capability when it applies.'
+      required:
+        - platform
+        - applicability
+        - accounts
+        - note
+        - cells
     TriggerOrganizationChatAnalysisRequestBody:
       type: object
       properties:
@@ -7073,18 +7040,6 @@ components:
       description: Form for updating a remote_session_issuer. All non-id fields are optional patches.
       required:
         - id
-    UpdateSupportMatrixRequestBody:
-      type: object
-      properties:
-        draft:
-          $ref: '#/components/schemas/SupportDraft'
-        revision:
-          type: string
-          minLength: 64
-          maxLength: 64
-      required:
-        - revision
-        - draft
     UploadImageResult:
       type: object
       properties:

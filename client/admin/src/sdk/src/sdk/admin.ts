@@ -54,7 +54,6 @@ import { adminStartTrial } from "../funcs/adminStartTrial.js";
 import { adminTriggerOrganizationChatAnalysis } from "../funcs/adminTriggerOrganizationChatAnalysis.js";
 import { adminUpdateGlobalIssuer } from "../funcs/adminUpdateGlobalIssuer.js";
 import { adminUpdateOrganization } from "../funcs/adminUpdateOrganization.js";
-import { adminUpdateSupportMatrix } from "../funcs/adminUpdateSupportMatrix.js";
 import { adminUploadPlatformImage } from "../funcs/adminUploadPlatformImage.js";
 import { ClientSDK, RequestOptions } from "../lib/sdks.js";
 import { AdminBulkUpdateAccountTypeResult } from "../models/components/adminbulkupdateaccounttyperesult.js";
@@ -110,7 +109,6 @@ import { SupportMatrix } from "../models/components/supportmatrix.js";
 import { TriggerOrganizationChatAnalysisRequestBody } from "../models/components/triggerorganizationchatanalysisrequestbody.js";
 import { UpdateOrganizationRequestBody } from "../models/components/updateorganizationrequestbody.js";
 import { UpdateRemoteSessionIssuerForm } from "../models/components/updateremotesessionissuerform.js";
-import { UpdateSupportMatrixRequestBody } from "../models/components/updatesupportmatrixrequestbody.js";
 import { UploadImageResult } from "../models/components/uploadimageresult.js";
 import { AdminDeleteGlobalIssuerRequest } from "../models/operations/admindeleteglobalissuer.js";
 import { AdminGetGlobalIssuerRequest } from "../models/operations/admingetglobalissuer.js";
@@ -937,30 +935,13 @@ export class Admin extends ClientSDK {
    * getSupportMatrix admin
    *
    * @remarks
-   * Read the shared support catalog and product coverage.
+   * Read the support matrix the server was built with. It is code, changed by pull request: server/internal/supportmatrix/matrix.yaml.
    */
   async getSupportMatrix(
     options?: RequestOptions,
   ): Promise<SupportMatrix> {
     return unwrapAsync(adminGetSupportMatrix(
       this,
-      options,
-    ));
-  }
-
-  /**
-   * updateSupportMatrix admin
-   *
-   * @remarks
-   * Save coverage against the last read revision; rejects concurrent changes.
-   */
-  async updateSupportMatrix(
-    request: UpdateSupportMatrixRequestBody,
-    options?: RequestOptions,
-  ): Promise<SupportMatrix> {
-    return unwrapAsync(adminUpdateSupportMatrix(
-      this,
-      request,
       options,
     ));
   }
