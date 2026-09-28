@@ -166,3 +166,12 @@ The silent and holding cases intentionally cannot demonstrate protocol failure
 while idle. Non-zero gauges are covered by transport tests without issuing a
 synthetic MCP call to the running fixtures. Open SSE is not itself an error.
 Short spikes between reports can be missed; metrics remain best-effort observations.
+
+Fresh completion reviews used `claude-danger` (Claude) and `codex-danger` (Codex)
+in separate visible Herdr panels with no inherited working conversation. Both
+reviewers inspected the final source, fixtures, tests, browser captures and
+compatibility evidence and passed the scoped local delivery with the limitations
+above. The final browser check returned zero MCP requests over 35 seconds after
+reloading Overview; the five-page navigation check also passed with zero MCP
+requests. Owner-restricted UI captures are local review artifacts, not a separate
+product UI or a production deployment.
