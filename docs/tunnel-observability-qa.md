@@ -178,10 +178,12 @@ Fresh independent completion reviewers ran via `claude-danger` and
 and current artifacts. Claude's final verdict: **implementation and verification
 complete, ready for PR; no remaining code, privacy, compatibility or guidance
 defect**. It independently ran 743 server tests, all tunnel tests and vet,
-four UI tests, dashboard type checking, Oxlint and formatting. Codex's code
-re-review found no remaining implementation findings after the cached-history
-color regression and Platform MCP assessment were resolved; final compatibility
-and delivery review is retained in `/tmp/tunnel-current-codex-review.md`.
+four UI tests, dashboard type checking, Oxlint and formatting. Codex's final implementation verdict: **PASS for the scoped, gated local delivery;
+no material implementation finding remains**. It independently parsed all 37
+bounded cases plus four final rebuilt pairs, matched the final source hash and
+all six binary hashes, and reran 160 bootstrap tests and four UI regressions.
+The cached-history color regression and Platform MCP assessment were resolved
+and re-reviewed. Full review: `/tmp/tunnel-current-codex-review.md`.
 Claude's full review is `/tmp/tunnel-current-claude-review.md`.
 
 PR screenshots show synthetic seeded history with a real local agent/target;
@@ -190,3 +192,10 @@ crops are published. Mobile layout was checked but its dev-overlay capture is
 not a public demo. Production image publication, IAM, customer-network canaries
 and fleet-scale capacity remain release gates; PR publication does not claim
 those completed. No quota fallback or paid overage was used.
+
+Delivery: [PR #6874](https://github.com/speakeasy-api/gram/pull/6874) contains the
+implementation and both inspected screenshot comments. Downloaded attachment
+hashes match the reviewed local PNGs. CI initially required the `mig:` title
+prefix because this change includes ClickHouse migrations; the title was
+corrected. CI is separate from the local validation above and was still running
+at publication. The worktree is retained for follow-up; no image was published.
