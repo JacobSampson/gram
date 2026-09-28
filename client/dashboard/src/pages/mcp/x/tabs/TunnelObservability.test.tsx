@@ -50,7 +50,7 @@ describe("tunnel status evidence", () => {
     );
     expect(screen.getByText("Diagnostics unsupported")).toBeTruthy();
     expect(screen.getByText("Not checked")).toBeTruthy();
-    expect(screen.queryByText("Target reachable")).toBeNull();
+    expect(screen.queryByText("Network reachable")).toBeNull();
     expect(screen.getByText("Activity history is not enabled")).toBeTruthy();
   });
 
@@ -77,7 +77,7 @@ describe("tunnel status evidence", () => {
     );
     expect(screen.getByText("Live status is unavailable")).toBeTruthy();
     expect(screen.getByText("Unknown")).toBeTruthy();
-    expect(screen.queryByText("Target reachable")).toBeNull();
+    expect(screen.queryByText("Network reachable")).toBeNull();
     expect(screen.queryByText("No connected agents")).toBeNull();
   });
 
@@ -130,4 +130,89 @@ it("does not color unavailable history green using cached successful responses",
   expect(value?.textContent).toBe("—");
   expect(value?.classList.contains("text-default-success")).toBe(false);
   expect(screen.getByText("Activity history is unavailable")).toBeTruthy();
+});
+
+it.each([
+  [
+    "idle",
+    {
+      state: "available",
+      requestsTotal: 0,
+      httpProgress: { waitingHeaders: 0, openResponses: 0 },
+    },
+    "HTTP / MCP: Not observed. No traffic has reached this agent.",
+  ],
+  [
+    "pending",
+    { state: "pending" },
+    "HTTP progress unavailable. Waiting for a fresh report.",
+  ],
+  [
+    "legacy",
+    { state: "available", requestsTotal: 2 },
+    "HTTP progress unavailable for this agent.",
+  ],
+  [
+    "stale",
+    {
+      state: "stale",
+      requestsTotal: 2,
+      httpProgress: { waitingHeaders: 1, openResponses: 1 },
+    },
+    "HTTP progress unavailable. Waiting for a fresh report.",
+  ],
+] as const)("represents %s evidence honestly", (_name, diagnostics, text) => {
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={{
+          ...legacy,
+          connections: [{ ...legacy.connections[0]!, diagnostics }],
+        }}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings#agent"
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(text)).toBeTruthy();
+  expect(screen.queryByText("Waiting for response headers")).toBeNull();
+});
+
+it("shows aggregate HTTP phases without calling an open stream a failure", () => {
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={{
+          ...legacy,
+          connections: [
+            {
+              ...legacy.connections[0]!,
+              diagnostics: {
+                state: "available",
+                targetState: "reachable",
+                requestsTotal: 10000,
+                httpProgress: { waitingHeaders: 12, openResponses: 24 },
+                lastHttpStatus: 200,
+              },
+            },
+          ],
+        }}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings#agent"
+      />
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByText("Waiting for response headers").nextElementSibling
+      ?.textContent,
+  ).toBe("12");
+  expect(
+    screen.getByText("Responses still open").nextElementSibling?.textContent,
+  ).toBe("24");
+  expect(screen.getByText(/Open streams may be expected/)).toBeTruthy();
+  expect(screen.getByText("Network reachable")).toBeTruthy();
 });

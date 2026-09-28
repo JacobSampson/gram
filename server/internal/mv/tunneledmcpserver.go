@@ -170,7 +170,7 @@ func buildTunnelDiagnostics(status *route.Diagnostics, now time.Time) *types.Tun
 	if status == nil {
 		return nil
 	}
-	view := &types.TunnelDiagnostics{State: status.State, ReceivedAt: nil, SampleAgeMs: nil, TargetState: nil, ConsecutiveFailures: nil, DNS: nil, TCP: nil, TLS: nil, RequestsTotal: nil, TransportErrorsTotal: nil, LastHTTPStatus: nil, LastHTTPResponseAgeMs: nil, LastTransportError: nil, LastTransportErrorAgeMs: nil}
+	view := &types.TunnelDiagnostics{HTTPProgress: nil, State: status.State, ReceivedAt: nil, SampleAgeMs: nil, TargetState: nil, ConsecutiveFailures: nil, DNS: nil, TCP: nil, TLS: nil, RequestsTotal: nil, TransportErrorsTotal: nil, LastHTTPStatus: nil, LastHTTPResponseAgeMs: nil, LastTransportError: nil, LastTransportErrorAgeMs: nil}
 	if status.Report == nil {
 		return view
 	}
@@ -196,6 +196,12 @@ func buildTunnelDiagnostics(status *route.Diagnostics, now time.Time) *types.Tun
 		return &types.TunnelDiagnosticStep{State: s.State, DurationMs: s.DurationMillis, Failure: s.Failure}
 	}
 	view.DNS, view.TCP, view.TLS = step(r.DNS), step(r.TCP), step(r.TLS)
+	if r.HTTPProgress != nil {
+		view.HTTPProgress = &types.TunnelHTTPProgress{
+			WaitingHeaders: int64(min(r.HTTPProgress.WaitingHeaders, math.MaxInt64)),
+			OpenResponses:  int64(min(r.HTTPProgress.OpenResponses, math.MaxInt64)),
+		}
+	}
 	view.RequestsTotal = new(int64(min(r.RequestsTotal, math.MaxInt64)))
 	view.TransportErrorsTotal = new(int64(min(r.TransportErrorsTotal, math.MaxInt64)))
 	view.LastHTTPStatus = new(r.LastHTTPStatus)

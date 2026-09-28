@@ -22,6 +22,8 @@ type TunnelDiagnostics struct {
 	DNS                 *TunnelDiagnosticStep
 	TCP                 *TunnelDiagnosticStep
 	TLS                 *TunnelDiagnosticStep
+	// Optional aggregate request progress; absent for older agents
+	HTTPProgress *TunnelHTTPProgress
 	// HTTP attempts since agent process start
 	RequestsTotal *int64
 	// Transport errors since agent process start

@@ -54,7 +54,7 @@ type checker struct {
 // client bounds every forward, including the soak's long-lived stream, so the
 // timeout must outlast the longest requested soak.
 func (c *checker) client() *http.Client {
-	return &http.Client{Timeout: max(60*time.Second, c.o.soak+30*time.Second)}
+	return &http.Client{Timeout: max(60*time.Second, c.o.soak+30*time.Second, c.o.nearFullHold+30*time.Second)}
 }
 
 func (c *checker) forward(ctx context.Context, method, path string, body io.Reader, hdr http.Header) (*http.Response, error) {

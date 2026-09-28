@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
     isPending: false,
     error: null as Error | null,
   })),
+  mcpConfig: undefined as
+    | { mcp?: string; mcps?: { url: string }[] }
+    | undefined,
   skillContext: undefined as
     | {
         loading?: boolean;
@@ -61,11 +64,14 @@ vi.mock("@/elements", async () => {
     }: {
       children: ReactNode;
       config: {
+        mcp?: string;
+        mcps?: { url: string }[];
         history?: { resolveCreator?: typeof mocks.resolveCreator };
         composer?: { skillContext?: typeof mocks.skillContext };
       };
     }) => {
       const hasRuntime = useContext(RuntimeContext);
+      mocks.mcpConfig = config;
       if (config.composer) mocks.skillContext = config.composer.skillContext;
       if (config.history) {
         mocks.resolveCreator = config.history.resolveCreator;
@@ -187,6 +193,7 @@ beforeEach(() => {
   mocks.permissionsLoading = false;
   mocks.getSkillIds = undefined;
   mocks.skillContext = undefined;
+  mocks.mcpConfig = undefined;
   mocks.activeRoute = "detail";
   mocks.resolveCreator = undefined;
   mocks.hasScope.mockReturnValue(false);
@@ -404,3 +411,30 @@ describe("InsightsProvider", () => {
     },
   );
 });
+
+it.each([false, true])(
+  "defers project MCP discovery until the assistant opens (expanded=%s)",
+  (expanded) => {
+    mocks.activeRoute = "home";
+    render(
+      <InsightsProvider
+        defaultExpanded={expanded}
+        mcpConfig={{
+          projectSlug: "project",
+          mcp: "https://example.invalid/mcp",
+          mcps: [{ url: "https://example.invalid/tunnel" }],
+        }}
+        title="Assistant"
+        subtitle="Test"
+      >
+        <div>Passive status page</div>
+      </InsightsProvider>,
+    );
+    expect(mocks.mcpConfig?.mcps).toEqual(
+      expanded ? [{ url: "https://example.invalid/tunnel" }] : [],
+    );
+    expect(mocks.mcpConfig?.mcp).toBe(
+      expanded ? "https://example.invalid/mcp" : undefined,
+    );
+  },
+);

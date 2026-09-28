@@ -1791,6 +1791,8 @@ type TunnelDiagnosticsResponseBody struct {
 	DNS                 *TunnelDiagnosticStepResponseBody `form:"dns,omitempty" json:"dns,omitempty" xml:"dns,omitempty"`
 	TCP                 *TunnelDiagnosticStepResponseBody `form:"tcp,omitempty" json:"tcp,omitempty" xml:"tcp,omitempty"`
 	TLS                 *TunnelDiagnosticStepResponseBody `form:"tls,omitempty" json:"tls,omitempty" xml:"tls,omitempty"`
+	// Optional aggregate request progress; absent for older agents
+	HTTPProgress *TunnelHTTPProgressResponseBody `form:"http_progress,omitempty" json:"http_progress,omitempty" xml:"http_progress,omitempty"`
 	// HTTP attempts since agent process start
 	RequestsTotal *int64 `form:"requests_total,omitempty" json:"requests_total,omitempty" xml:"requests_total,omitempty"`
 	// Transport errors since agent process start
@@ -1814,6 +1816,15 @@ type TunnelDiagnosticStepResponseBody struct {
 	DurationMs int64 `form:"duration_ms" json:"duration_ms" xml:"duration_ms"`
 	// Bounded failure category, never raw error text
 	Failure string `form:"failure" json:"failure" xml:"failure"`
+}
+
+// TunnelHTTPProgressResponseBody is used to define fields on response body
+// types.
+type TunnelHTTPProgressResponseBody struct {
+	// Requests awaiting final HTTP response headers at the last sample
+	WaitingHeaders int64 `form:"waiting_headers" json:"waiting_headers" xml:"waiting_headers"`
+	// Open HTTP response bodies at the last sample; long-lived SSE may be expected
+	OpenResponses int64 `form:"open_responses" json:"open_responses" xml:"open_responses"`
 }
 
 // TunnelMetricPointResponseBody is used to define fields on response body

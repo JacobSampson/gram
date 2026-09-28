@@ -1,0 +1,77 @@
+name: gram-tunnel-diagnostics-demo
+
+x-target: &target
+  image: python:3.13-alpine
+  command: [python, /demo/targets.py]
+  volumes: [./targets.py:/demo/targets.py:ro]
+  read_only: true
+  tmpfs: [/tmp]
+  pids_limit: 64
+  mem_limit: 96m
+  restart: unless-stopped
+
+x-agent: &agent
+  image: gram-tunnel-agent:observability
+  build:
+    context: ../..
+    dockerfile: tunnel/Dockerfile
+    args:
+      VERSION: 0.2.0-dev
+  extra_hosts: [host.docker.internal:host-gateway]
+  read_only: true
+  pids_limit: 64
+  mem_limit: 96m
+  restart: unless-stopped
+
+x-agent-env: &agent-env
+  TUNNEL_GATEWAY_URL: ${DEMO_GATEWAY_URL:-ws://host.docker.internal:46932/connect}
+  TUNNEL_SERVICE_VERSION: compose-demo
+
+services:
+  dns-only:
+    <<: *target
+    environment: { MODE: closed }
+  silent:
+    <<: *target
+    environment: { MODE: silent }
+  holding:
+    <<: *target
+    environment: { MODE: holding }
+  healthy:
+    <<: *target
+    environment: { MODE: healthy }
+
+  agent-missing:
+    <<: *agent
+    environment:
+      <<: *agent-env
+      TUNNEL_KEY: ${KEY_MISSING:?Run demo.py setup first}
+      TUNNEL_LOCAL_MCP_URL: http://does-not-exist.invalid:8080/mcp
+  agent-dns-only:
+    <<: *agent
+    depends_on: [dns-only]
+    environment:
+      <<: *agent-env
+      TUNNEL_KEY: ${KEY_CLOSED:?Run demo.py setup first}
+      TUNNEL_LOCAL_MCP_URL: http://dns-only:8080/mcp
+  agent-silent:
+    <<: *agent
+    depends_on: [silent]
+    environment:
+      <<: *agent-env
+      TUNNEL_KEY: ${KEY_SILENT:?Run demo.py setup first}
+      TUNNEL_LOCAL_MCP_URL: http://silent:8080/mcp
+  agent-holding:
+    <<: *agent
+    depends_on: [holding]
+    environment:
+      <<: *agent-env
+      TUNNEL_KEY: ${KEY_HOLDING:?Run demo.py setup first}
+      TUNNEL_LOCAL_MCP_URL: http://holding:8080/mcp
+  agent-healthy:
+    <<: *agent
+    depends_on: [healthy]
+    environment:
+      <<: *agent-env
+      TUNNEL_KEY: ${KEY_HEALTHY:?Run demo.py setup first}
+      TUNNEL_LOCAL_MCP_URL: http://healthy:8080/mcp

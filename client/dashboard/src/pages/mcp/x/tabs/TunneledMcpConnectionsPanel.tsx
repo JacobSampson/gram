@@ -19,7 +19,7 @@ import { Link } from "react-router";
 
 // Live sessions come from Redis heartbeats; a short poll keeps the panel
 // honest without hammering the API while the page sits open.
-const CONNECTIONS_POLL_MS = 15_000;
+const CONNECTIONS_POLL_MS = 30_000;
 
 type StatusPresentation = {
   label: string;

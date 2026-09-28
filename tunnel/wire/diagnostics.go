@@ -17,8 +17,8 @@ const (
 	ControlStatusPath     = ControlPathPrefix + "status"
 	MaxDiagnosticsBytes   = 8 << 10
 	MaxTargetDisplayBytes = 2 << 10
-	DiagnosticsInterval   = 15 * time.Second
-	DiagnosticsFreshness  = 45 * time.Second
+	DiagnosticsInterval   = 30 * time.Second
+	DiagnosticsFreshness  = 90 * time.Second
 )
 
 // DiagnosticStep contains only bounded categories and timing, never resolver or TLS error text.
@@ -28,9 +28,19 @@ type DiagnosticStep struct {
 	Failure        string `json:"failure"`
 }
 
+// HTTPProgress contains aggregate gauges, with no per-request identities or data.
+type HTTPProgress struct {
+	// WaitingHeaders counts requests that have not received final response headers.
+	WaitingHeaders uint64 `json:"waiting_headers"`
+	// OpenResponses counts response bodies not yet ended or closed, including SSE.
+	OpenResponses uint64 `json:"open_responses"`
+}
+
 // DiagnosticsReport is the allowlisted diagnostics.v1 wire contract. Ages are
 // relative to serialization on the agent, avoiding dependence on customer clocks.
 type DiagnosticsReport struct {
+	// HTTPProgress is absent on older agents, rather than an observed zero.
+	HTTPProgress                *HTTPProgress  `json:"http_progress,omitempty"`
 	Version                     int            `json:"version"`
 	Sequence                    uint64         `json:"sequence"`
 	SampleAgeMillis             int64          `json:"sample_age_ms"`

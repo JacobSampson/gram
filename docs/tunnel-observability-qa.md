@@ -121,3 +121,48 @@ hashes match the reviewed local PNGs. CI initially required the `mig:` title
 prefix because this change includes ClickHouse migrations; the title was
 corrected. CI is separate from the local validation above and was still running
 at publication. The worktree is retained for follow-up; no image was published.
+
+## Passive HTTP progress follow-up
+
+The `0.2.0-dev` local agent enriches `diagnostics.v1` with optional aggregate
+waiting-header/open-response gauges. Retained state is constant-size; forwarding
+only updates counters, and response bodies are never parsed or recorded.
+Diagnostics and UI polling now use 30-second intervals. Existing gateway history
+sampling remains 15 seconds and MCP request history uses minute buckets.
+
+Validation of this follow-up:
+
+- Race tests passed for agent, wire, gateway and route, including 10,000 concurrent
+  aggregate updates, body EOF/close idempotence, upgrade writer preservation,
+  forwarding integrity, cancellation and payload-sentinel exclusion.
+- 37 model-view tests passed; 24 focused dashboard tests passed. Dashboard type
+  checking and pinned server lint passed (only a linter deprecation warning).
+- Local parallel microbenchmark: approximately 635 ns per observed request versus
+  69 ns baseline, with one additional body-wrapper allocation. This is a recorder
+  microbenchmark, not a fleet throughput or latency claim.
+- The five Compose fixtures were rebuilt and viewed in the actual Gram Overview.
+  DNS absence and connection refusal are distinct; the other three are network
+  reachable. All agents report zero HTTP requests until normal traffic arrives.
+  Fresh fixture resources replaced the earlier development exerciser's history.
+- An existing global assistant eagerly initialized MCP clients when mounted even
+  while collapsed. Its client discovery is now deferred until assistant/chat use,
+  so a passive Overview does not initiate MCP discovery. Explicit assistant use
+  still performs normal discovery, and existing Tool I/O logging is unchanged.
+- The compatibility run exercised 24 old/new/disabled pairings, four rollback
+  transitions and near-full pressure. 27 of 29 scenarios passed initially. A
+  published 0.1.0/frozen-old pair saw 63 idle TCP accepts in one timestamped burst,
+  with zero HTTP; its isolated rerun passed with zero idle accepts. A published
+  0.1.1/new-gateway container produced no startup log and missed the 30-second
+  admission deadline; its isolated rerun passed admission, forwarding, idle checks
+  and reconnect. Both anomalous original results are retained locally; their exact
+  environmental causes were not established. No compatibility failure reproduced
+  in those targeted reruns.
+- After adapting the harness timing to the slower cadence, an independent
+  70-second pressure run passed: 232 streams delivered all 36 SSE events, five
+  additional forwards succeeded, diagnostics paused and resumed without teardown.
+  The harness client deadline now includes the requested pressure duration.
+
+The silent and holding cases intentionally cannot demonstrate protocol failure
+while idle. Non-zero gauges are covered by transport tests without issuing a
+synthetic MCP call to the running fixtures. Open SSE is not itself an error.
+Short spikes between reports can be missed; metrics remain best-effort observations.

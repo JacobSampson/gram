@@ -215,6 +215,6 @@ func runNearFull(o options, as agentSpec, gs gatewaySpec) pairResult {
 	return finish()
 }
 
-// wireIntervalMax bounds how long polls may take to resume: one 15s interval
+// wireIntervalMax bounds how long polls may take to resume: one 30s interval
 // plus jitter, with margin.
-const wireIntervalMax = 25 * time.Second
+const wireIntervalMax = 40 * time.Second

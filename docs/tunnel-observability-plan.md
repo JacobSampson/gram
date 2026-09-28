@@ -24,7 +24,7 @@ A new gateway with diagnostics enabled makes authenticated `GET /_tunnel/status`
 
 Reports contain a version, relative sample ages, monotonic sequence, bounded DNS/TCP/TLS results, consecutive failures, passive HTTP status and process request/transport-error counters. Only fixed categories and scalar values survive typed decoding. Report bodies are capped at 8 KiB, response headers/body reading is bounded, and malformed or unsupported fields cannot block admission or routing.
 
-Default polling is 15 seconds with jitter, freshness 45 seconds, timeout 5 seconds. One opener per session and 32 per gateway are allowed. Polling skips sessions with at least 224 yamux streams and backs off failed polls up to four minutes. Slot contention retains old evidence until it naturally becomes stale. A timed-out opener keeps its concurrency slot until it returns; closing the diagnostic stream cancels yamux's open timer, never the forwarding session.
+Default polling is 30 seconds with jitter, freshness 90 seconds, timeout 5 seconds. One opener per session and 32 per gateway are allowed. Polling skips sessions with at least 224 yamux streams and backs off failed polls up to four minutes. Slot contention retains old evidence until it naturally becomes stale. A timed-out opener keeps its concurrency slot until it returns; closing the diagnostic stream cancels yamux's open timer, never the forwarding session.
 
 The agent probes only its startup-pinned target while recently polled. It stops active probes after a 60-second polling lease expires. Active checks stop at DNS/TCP/TLS; they send no HTTP, MCP initialization, tool list or tool calls. Proxy-controlled transport is explicitly unobservable rather than probed directly. Passive forwarding observes HTTP status and typed transport errors without reading bodies. An HTTP 401 is a response, not proof that the transport is dead. The UI requires two consecutive failed probes before its aggregate target state becomes unreachable; it still shows the first failing step immediately. A successful probe recovers it.
 
@@ -135,3 +135,26 @@ Local tests cover transport-only probes, untrusted TLS, HTTP 401 interpretation,
 Before a broad production rollout: inventory deployed versions; verify publisher IAM and ingress header redaction; canary fast and slow fleets at expected scale; measure forwarding overhead, report freshness, memory, insert volume and query p95; exercise private/public/session-pinned/meta-MCP deployments in their real routing configuration. DNS/proxy/TLS behavior is tested locally but cannot guarantee every customer's network. Gateway process health is not target health, and a disconnected agent alone cannot identify a gateway outage.
 
 The unified MCP server Overview shows the optional source-wide charts and diagnostics when flagged on, and retains the existing connections panel when off. The existing server-specific usage section stays available below. Publication was tested against the emulator; production credential refresh with the gateway publisher initialization context is an explicit IAM canary check.
+
+## Passive HTTP progress and local examples
+
+The optional `http_progress` enrichment reports only aggregate counts of requests
+awaiting response headers and response bodies still open. Counters use constant
+space and no I/O in the forwarding path; body reads are passed through without
+inspection or per-chunk recording. EOF/error/close releases each gauge once.
+Long-lived SSE is not classified as failed. Older agents omit the field and the
+UI says unavailable rather than treating missing data as zero.
+
+The dashboard samples cached diagnostics every 30 seconds. Probes issue DNS/TCP/TLS
+only: no MCP discovery, ping, or tool calls. No normal traffic means HTTP/MCP
+not observed. An HTTP 200 alone never proves MCP completion.
+The [five-case Docker Compose example](../examples/tunnel-diagnostics/README.md)
+creates real local agents and targets for the actual Gram Overview. Native stdio
+is not supported; plaintext HTTP targets report TLS as not applicable.
+
+Viewing a passive dashboard page also leaves the collapsed Project Assistant's
+client MCP configuration empty. Discovery becomes available when the user opens
+the assistant, enters chat, uses a page-owned chat surface, or queues a prompt.
+This fixes pre-existing eager initialization from the global assistant; the
+assistant's user-triggered discovery remains normal traffic, separate from health
+checks. Existing Tool I/O logging remains the place for request/response data.

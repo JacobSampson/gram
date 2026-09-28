@@ -395,6 +395,12 @@ var TunnelDiagnosticStep = Type("TunnelDiagnosticStep", func() {
 	Attribute("failure", String, "Bounded failure category, never raw error text")
 	Required("state", "duration_ms", "failure")
 })
+var TunnelHTTPProgress = Type("TunnelHTTPProgress", func() {
+	Meta("struct:pkg:path", "types")
+	Attribute("waiting_headers", Int64, "Requests awaiting final HTTP response headers at the last sample")
+	Attribute("open_responses", Int64, "Open HTTP response bodies at the last sample; long-lived SSE may be expected")
+	Required("waiting_headers", "open_responses")
+})
 var TunnelDiagnostics = Type("TunnelDiagnostics", func() {
 	Meta("struct:pkg:path", "types")
 	Attribute("state", String, "pending, available, stale, unavailable, unsupported or disabled")
@@ -405,6 +411,7 @@ var TunnelDiagnostics = Type("TunnelDiagnostics", func() {
 	Attribute("dns", TunnelDiagnosticStep)
 	Attribute("tcp", TunnelDiagnosticStep)
 	Attribute("tls", TunnelDiagnosticStep)
+	Attribute("http_progress", TunnelHTTPProgress, "Optional aggregate request progress; absent for older agents")
 	Attribute("requests_total", Int64, "HTTP attempts since agent process start")
 	Attribute("transport_errors_total", Int64, "Transport errors since agent process start")
 	Attribute("last_http_status", Int, "Last observed HTTP status, including authentication challenges")

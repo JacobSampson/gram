@@ -1139,9 +1139,17 @@ export function InsightsProvider({
     };
   }, [serverTransport]);
 
+  // Passive pages must not initialize every project MCP merely by mounting the
+  // collapsed composer. Discover when the user opens the assistant, or when a
+  // page explicitly owns its visible chat surface (Home / full-page chat).
+  const discoverMcpTools =
+    isExpanded || onChatRoute || dockHiddenByPage || pendingPrompt !== null;
+
   const elementsConfig = useMemo<ElementsConfig>(
     () => ({
       ...mcpConfig,
+      mcp: discoverMcpTools ? mcpConfig.mcp : undefined,
+      mcps: discoverMcpTools ? mcpConfig.mcps : [],
       variant: "standalone",
       // Route the conversation through the persistent server-side Project
       // Assistant. Its model and system prompt are owned server-side, so we
@@ -1229,6 +1237,7 @@ export function InsightsProvider({
     }),
     [
       mcpConfig,
+      discoverMcpTools,
       title,
       subtitle,
       suggestions,

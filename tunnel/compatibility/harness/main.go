@@ -99,7 +99,7 @@ func main() {
 	var transitions string
 	flag.StringVar(&transitions, "transitions", "gateway-rollback,gateway-rollback-main,agent-rollback,agent-rollback-main", "rollback transitions: gateway-rollback (new->old-src->new gateway, same agent), gateway-rollback-main (new->main-src->new), agent-rollback (new agent replaced by old-image or old-src), agent-rollback-main (new agent replaced by main-image or main-src); empty skips")
 	flag.IntVar(&o.nearFullStreams, "nearfull-streams", 232, "concurrent user streams for the near-full scenario (gateway skips polls at >=224 yamux streams, caps users at 256); 0 skips")
-	flag.DurationVar(&o.nearFullHold, "nearfull-hold", 45*time.Second, "how long near-full streams stay open; keep above two poll intervals")
+	flag.DurationVar(&o.nearFullHold, "nearfull-hold", 70*time.Second, "how long near-full streams stay open; keep above two poll intervals")
 	flag.BoolVar(&o.dirtyTarget, "dirty-target", true, "add userinfo, query and fragment to the pinned target URL and assert they never leak")
 	flag.BoolVar(&o.requireDiag, "require-diagnostics", true, "require a completed, reachable diagnostics report and sanitized target display on negotiated new/new pairs")
 	flag.StringVar(&o.provenancePath, "provenance", "", "provenance JSON written by run.sh, embedded in the report")

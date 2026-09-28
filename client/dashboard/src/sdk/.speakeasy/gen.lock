@@ -1770,6 +1770,7 @@ trackedFiles:
   src/models/components/tunneledmcpconnection.ts: {}
   src/models/components/tunneledmcpserver.ts: {}
   src/models/components/tunneledmcpserverconnections.ts: {}
+  src/models/components/tunnelhttpprogress.ts: {}
   src/models/components/tunnelmetricpoint.ts: {}
   src/models/components/tunnelmetrics.ts: {}
   src/models/components/undistributeskillrequestbody.ts: {}

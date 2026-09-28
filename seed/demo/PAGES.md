@@ -142,7 +142,7 @@ Browser verification: `[~]` (not yet verified); see check 18 in `verify.md`.
 
 ## Tunnel source observability
 
-The Private inventory tunnel source has one linked private MCP server and deterministic 24-hour request/connection history with a recent gap. It is intentionally disconnected; no synthetic agent reaches a private target. Open its Overview with `gram-tunnel-observability` enabled and verify charts, the gap, and the no-agent diagnostic state.
+The Private inventory tunnel source has one linked private MCP server and deterministic 24-hour request/connection history with a recent gap. It is intentionally disconnected; no synthetic agent reaches a private target. Live HTTP progress is never seeded as fresh evidence. For real local agents, use `examples/tunnel-diagnostics/README.md`; the five idle fixtures show transport results without issuing MCP calls. Open its Overview with `gram-tunnel-observability` enabled and verify charts, the gap, and the no-agent diagnostic state.
 
 ## Local only (RunLocalFixtures, never the demo org)
 

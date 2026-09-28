@@ -1951,6 +1951,9 @@ func marshalTypesTunnelDiagnosticsToTunnelDiagnosticsResponseBody(v *types.Tunne
 	if v.TLS != nil {
 		res.TLS = marshalTypesTunnelDiagnosticStepToTunnelDiagnosticStepResponseBody(v.TLS)
 	}
+	if v.HTTPProgress != nil {
+		res.HTTPProgress = marshalTypesTunnelHTTPProgressToTunnelHTTPProgressResponseBody(v.HTTPProgress)
+	}
 
 	return res
 }
@@ -1966,6 +1969,21 @@ func marshalTypesTunnelDiagnosticStepToTunnelDiagnosticStepResponseBody(v *types
 		State:      v.State,
 		DurationMs: v.DurationMs,
 		Failure:    v.Failure,
+	}
+
+	return res
+}
+
+// marshalTypesTunnelHTTPProgressToTunnelHTTPProgressResponseBody builds a
+// value of type *TunnelHTTPProgressResponseBody from a value of type
+// *types.TunnelHTTPProgress.
+func marshalTypesTunnelHTTPProgressToTunnelHTTPProgressResponseBody(v *types.TunnelHTTPProgress) *TunnelHTTPProgressResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &TunnelHTTPProgressResponseBody{
+		WaitingHeaders: v.WaitingHeaders,
+		OpenResponses:  v.OpenResponses,
 	}
 
 	return res

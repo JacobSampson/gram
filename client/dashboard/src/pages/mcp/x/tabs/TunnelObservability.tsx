@@ -169,8 +169,8 @@ export function TunnelObservability({
       <div className="space-y-3">
         <h2 className="text-display-xs">Agents & target checks</h2>
         <p className="text-muted-foreground text-sm">
-          Transport checks verify DNS, TCP, and TLS. An HTTP response confirms
-          reachability; authentication and MCP success are separate.
+          DNS, TCP, and TLS checks run every 30 seconds. HTTP progress is
+          sampled from normal traffic; checks never invoke MCP methods or tools.
         </p>
         <AgentList
           live={live}
@@ -485,7 +485,7 @@ function diagnosticLabel(d?: TunnelDiagnostics) {
   return (
     (
       {
-        reachable: "Target reachable",
+        reachable: "Network reachable",
         unreachable: "Target unreachable",
         pending: "Waiting for checks",
         unknown: "Reachability unknown",
@@ -530,6 +530,7 @@ function DiagnosticDetails({ value: d }: { value: TunnelDiagnostics }) {
           {failures[failure] ?? "Transport check unavailable."}
         </p>
       ) : null}
+      <HttpProgress value={d} />
       {d.lastHttpStatus ? (
         <p className="text-muted-foreground text-sm">
           Last HTTP response: {d.lastHttpStatus}
@@ -549,6 +550,53 @@ function DiagnosticDetails({ value: d }: { value: TunnelDiagnostics }) {
         </p>
       ) : null}
     </>
+  );
+}
+
+function HttpProgress({ value: d }: { value: TunnelDiagnostics }) {
+  if (d.state !== "available") {
+    return (
+      <p className="text-muted-foreground text-sm">
+        HTTP progress unavailable. Waiting for a fresh report.
+      </p>
+    );
+  }
+  if (!d.httpProgress) {
+    return (
+      <p className="text-muted-foreground text-sm">
+        HTTP progress unavailable for this agent.
+      </p>
+    );
+  }
+  if (!Number(d.requestsTotal)) {
+    return (
+      <p className="text-muted-foreground text-sm">
+        HTTP / MCP: Not observed. No traffic has reached this agent.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <dl className="grid grid-cols-2 gap-4">
+        <div>
+          <dt className="text-eyebrow">Waiting for response headers</dt>
+          <dd className="mt-1 text-sm tabular-nums">
+            {Number(d.httpProgress.waitingHeaders)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-eyebrow">Responses still open</dt>
+          <dd className="mt-1 text-sm tabular-nums">
+            {Number(d.httpProgress.openResponses)}
+          </dd>
+        </div>
+      </dl>
+      <p className="text-muted-foreground text-sm">
+        Counts reflect the last 30-second sample. Open streams may be expected.
+        HTTP responses alone do not confirm MCP success; activity charts show
+        observed MCP outcomes.
+      </p>
+    </div>
   );
 }
 

@@ -106797,6 +106797,8 @@ components:
                     format: int64
                 dns:
                     $ref: '#/components/schemas/TunnelDiagnosticStep'
+                http_progress:
+                    $ref: '#/components/schemas/TunnelHTTPProgress'
                 last_http_response_age_ms:
                     type: integer
                     description: HTTP response age at view time, -1 if absent
@@ -106840,6 +106842,20 @@ components:
                     format: int64
             required:
                 - state
+        TunnelHTTPProgress:
+            type: object
+            properties:
+                open_responses:
+                    type: integer
+                    description: Open HTTP response bodies at the last sample; long-lived SSE may be expected
+                    format: int64
+                waiting_headers:
+                    type: integer
+                    description: Requests awaiting final HTTP response headers at the last sample
+                    format: int64
+            required:
+                - waiting_headers
+                - open_responses
         TunnelMetricPoint:
             type: object
             properties:

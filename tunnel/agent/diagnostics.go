@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -29,7 +30,7 @@ type diagnostics struct {
 
 func newDiagnostics() *diagnostics {
 	step := wire.DiagnosticStep{State: "not_tested"}
-	return &diagnostics{report: wire.DiagnosticsReport{Version: 1, TargetState: "pending", DNS: step, TCP: step, TLS: step}, wake: make(chan struct{}, 1)}
+	return &diagnostics{report: wire.DiagnosticsReport{HTTPProgress: &wire.HTTPProgress{}, Version: 1, TargetState: "pending", DNS: step, TCP: step, TLS: step}, wake: make(chan struct{}, 1)}
 }
 
 func ageMillis(at, now time.Time) int64 {
@@ -49,6 +50,8 @@ func (d *diagnostics) snapshot() wire.DiagnosticsReport {
 	default:
 	}
 	report := d.report
+	progress := *d.report.HTTPProgress
+	report.HTTPProgress = &progress
 	report.SampleAgeMillis = ageMillis(d.sampledAt, now)
 	report.LastHTTPResponseAgeMillis = ageMillis(d.responseAt, now)
 	report.LastTransportErrorAgeMillis = ageMillis(d.errorAt, now)
@@ -101,10 +104,12 @@ func (t observedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	d := t.diagnostics
 	d.mu.Lock()
 	d.report.RequestsTotal++
+	d.report.HTTPProgress.WaitingHeaders++
 	d.mu.Unlock()
 	response, err := t.base.RoundTrip(req)
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	d.report.HTTPProgress.WaitingHeaders--
 	if err != nil && errors.Is(err, context.Canceled) {
 		return response, err
 	}
@@ -115,8 +120,52 @@ func (t observedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	} else {
 		d.report.LastHTTPStatus = response.StatusCode
 		d.responseAt = time.Now()
+		if response.Body != nil && response.Body != http.NoBody {
+			d.report.HTTPProgress.OpenResponses++
+			body := &observedBody{ReadCloser: response.Body, diagnostics: d}
+			// HTTP upgrades require the original body's write interface.
+			if writer, ok := response.Body.(io.Writer); ok {
+				response.Body = &observedReadWriteBody{observedBody: body, Writer: writer}
+			} else {
+				response.Body = body
+			}
+		}
 	}
 	return response, err
+}
+
+// observedBody updates a gauge only when a response ends. Reads are forwarded
+// unchanged: no parsing, buffering, byte counting, or per-chunk locking.
+type observedBody struct {
+	io.ReadCloser
+	diagnostics *diagnostics
+	once        sync.Once
+}
+
+func (b *observedBody) finished() {
+	b.once.Do(func() {
+		b.diagnostics.mu.Lock()
+		b.diagnostics.report.HTTPProgress.OpenResponses--
+		b.diagnostics.mu.Unlock()
+	})
+}
+
+func (b *observedBody) Read(p []byte) (int, error) {
+	n, err := b.ReadCloser.Read(p)
+	if err != nil {
+		b.finished()
+	}
+	return n, err
+}
+
+func (b *observedBody) Close() error {
+	defer b.finished()
+	return b.ReadCloser.Close()
+}
+
+type observedReadWriteBody struct {
+	*observedBody
+	io.Writer
 }
 
 func transportFailure(err error) string {

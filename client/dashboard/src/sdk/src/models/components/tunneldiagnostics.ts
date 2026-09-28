@@ -11,6 +11,10 @@ import {
   TunnelDiagnosticStep,
   TunnelDiagnosticStep$inboundSchema,
 } from "./tunneldiagnosticstep.js";
+import {
+  TunnelHTTPProgress,
+  TunnelHTTPProgress$inboundSchema,
+} from "./tunnelhttpprogress.js";
 
 export type TunnelDiagnostics = {
   /**
@@ -18,6 +22,7 @@ export type TunnelDiagnostics = {
    */
   consecutiveFailures?: number | undefined;
   dns?: TunnelDiagnosticStep | undefined;
+  httpProgress?: TunnelHTTPProgress | undefined;
   /**
    * HTTP response age at view time, -1 if absent
    */
@@ -70,6 +75,7 @@ export const TunnelDiagnostics$inboundSchema: z.ZodMiniType<
   z.object({
     consecutive_failures: z.optional(z.int()),
     dns: z.optional(TunnelDiagnosticStep$inboundSchema),
+    http_progress: z.optional(TunnelHTTPProgress$inboundSchema),
     last_http_response_age_ms: z.optional(z.int()),
     last_http_status: z.optional(z.int()),
     last_transport_error: z.optional(z.string()),
@@ -88,6 +94,7 @@ export const TunnelDiagnostics$inboundSchema: z.ZodMiniType<
   z.transform((v) => {
     return remap$(v, {
       "consecutive_failures": "consecutiveFailures",
+      "http_progress": "httpProgress",
       "last_http_response_age_ms": "lastHttpResponseAgeMs",
       "last_http_status": "lastHttpStatus",
       "last_transport_error": "lastTransportError",
