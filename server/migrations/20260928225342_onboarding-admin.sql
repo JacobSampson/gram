@@ -69,6 +69,8 @@ CREATE TABLE "onboarding_playbook_steps" (
   CONSTRAINT "onboarding_playbook_steps_playbook_id_fkey" FOREIGN KEY ("playbook_id") REFERENCES "onboarding_playbooks" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT "onboarding_playbook_steps_step_id_fkey" FOREIGN KEY ("step_id") REFERENCES "onboarding_steps" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create index "onboarding_playbook_steps_position_key" to table: "onboarding_playbook_steps"
+CREATE UNIQUE INDEX "onboarding_playbook_steps_position_key" ON "onboarding_playbook_steps" ("playbook_id", "position");
 -- Create index "onboarding_playbook_steps_step_id_idx" to table: "onboarding_playbook_steps"
 CREATE INDEX "onboarding_playbook_steps_step_id_idx" ON "onboarding_playbook_steps" ("step_id");
 -- Create "onboarding_step_dependencies" table
@@ -79,7 +81,8 @@ CREATE TABLE "onboarding_step_dependencies" (
   "updated_at" timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY ("step_id", "requires_step_id"),
   CONSTRAINT "onboarding_step_dependencies_requires_step_id_fkey" FOREIGN KEY ("requires_step_id") REFERENCES "onboarding_steps" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
-  CONSTRAINT "onboarding_step_dependencies_step_id_fkey" FOREIGN KEY ("step_id") REFERENCES "onboarding_steps" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+  CONSTRAINT "onboarding_step_dependencies_step_id_fkey" FOREIGN KEY ("step_id") REFERENCES "onboarding_steps" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "onboarding_step_dependencies_step_id_check" CHECK (step_id <> requires_step_id)
 );
 -- Create index "onboarding_step_dependencies_requires_step_id_idx" to table: "onboarding_step_dependencies"
 CREATE INDEX "onboarding_step_dependencies_requires_step_id_idx" ON "onboarding_step_dependencies" ("requires_step_id");
@@ -90,7 +93,7 @@ CREATE TABLE "onboarding_step_methods" (
   "created_at" timestamptz NOT NULL DEFAULT clock_timestamp(),
   "updated_at" timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY ("step_id", "integration_method_id"),
-  CONSTRAINT "onboarding_step_methods_integration_method_id_fkey" FOREIGN KEY ("integration_method_id") REFERENCES "support_matrix_integration_methods" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+  CONSTRAINT "onboarding_step_methods_integration_method_id_fkey" FOREIGN KEY ("integration_method_id") REFERENCES "support_matrix_integration_methods" ("id") ON UPDATE NO ACTION ON DELETE SET NULL,
   CONSTRAINT "onboarding_step_methods_step_id_fkey" FOREIGN KEY ("step_id") REFERENCES "onboarding_steps" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 -- Create index "onboarding_step_methods_integration_method_id_idx" to table: "onboarding_step_methods"
