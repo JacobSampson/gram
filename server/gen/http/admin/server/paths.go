@@ -291,3 +291,23 @@ func UpdateSupportMatrixAdminPath() string {
 func GetSupportCoverageAdminPath() string {
 	return "/admin/supportCoverage.get"
 }
+
+// ListOnboardingStepsAdminPath returns the URL path to the admin service listOnboardingSteps HTTP endpoint.
+func ListOnboardingStepsAdminPath() string {
+	return "/admin/onboarding.steps"
+}
+
+// GetOnboardingStackOptionsAdminPath returns the URL path to the admin service getOnboardingStackOptions HTTP endpoint.
+func GetOnboardingStackOptionsAdminPath() string {
+	return "/admin/onboarding.stackOptions"
+}
+
+// GetOrganizationOnboardingStackAdminPath returns the URL path to the admin service getOrganizationOnboardingStack HTTP endpoint.
+func GetOrganizationOnboardingStackAdminPath() string {
+	return "/admin/organization.onboardingStack"
+}
+
+// SetOrganizationOnboardingStackAdminPath returns the URL path to the admin service setOrganizationOnboardingStack HTTP endpoint.
+func SetOrganizationOnboardingStackAdminPath() string {
+	return "/admin/organization.onboardingStack"
+}

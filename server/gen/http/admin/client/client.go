@@ -244,6 +244,22 @@ type Client struct {
 	// getSupportCoverage endpoint.
 	GetSupportCoverageDoer goahttp.Doer
 
+	// ListOnboardingSteps Doer is the HTTP client used to make requests to the
+	// listOnboardingSteps endpoint.
+	ListOnboardingStepsDoer goahttp.Doer
+
+	// GetOnboardingStackOptions Doer is the HTTP client used to make requests to
+	// the getOnboardingStackOptions endpoint.
+	GetOnboardingStackOptionsDoer goahttp.Doer
+
+	// GetOrganizationOnboardingStack Doer is the HTTP client used to make requests
+	// to the getOrganizationOnboardingStack endpoint.
+	GetOrganizationOnboardingStackDoer goahttp.Doer
+
+	// SetOrganizationOnboardingStack Doer is the HTTP client used to make requests
+	// to the setOrganizationOnboardingStack endpoint.
+	SetOrganizationOnboardingStackDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -321,6 +337,10 @@ func NewClient(
 		GetSupportMatrixDoer:                      doer,
 		UpdateSupportMatrixDoer:                   doer,
 		GetSupportCoverageDoer:                    doer,
+		ListOnboardingStepsDoer:                   doer,
+		GetOnboardingStackOptionsDoer:             doer,
+		GetOrganizationOnboardingStackDoer:        doer,
+		SetOrganizationOnboardingStackDoer:        doer,
 		RestoreResponseBody:                       restoreBody,
 		scheme:                                    scheme,
 		host:                                      host,
@@ -1697,6 +1717,102 @@ func (c *Client) GetSupportCoverage() goa.Endpoint {
 		resp, err := c.GetSupportCoverageDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("admin", "getSupportCoverage", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// ListOnboardingSteps returns an endpoint that makes HTTP requests to the
+// admin service listOnboardingSteps server.
+func (c *Client) ListOnboardingSteps() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeListOnboardingStepsRequest(c.encoder)
+		decodeResponse = DecodeListOnboardingStepsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildListOnboardingStepsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ListOnboardingStepsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("admin", "listOnboardingSteps", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetOnboardingStackOptions returns an endpoint that makes HTTP requests to
+// the admin service getOnboardingStackOptions server.
+func (c *Client) GetOnboardingStackOptions() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetOnboardingStackOptionsRequest(c.encoder)
+		decodeResponse = DecodeGetOnboardingStackOptionsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetOnboardingStackOptionsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetOnboardingStackOptionsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("admin", "getOnboardingStackOptions", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetOrganizationOnboardingStack returns an endpoint that makes HTTP requests
+// to the admin service getOrganizationOnboardingStack server.
+func (c *Client) GetOrganizationOnboardingStack() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetOrganizationOnboardingStackRequest(c.encoder)
+		decodeResponse = DecodeGetOrganizationOnboardingStackResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetOrganizationOnboardingStackRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetOrganizationOnboardingStackDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("admin", "getOrganizationOnboardingStack", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SetOrganizationOnboardingStack returns an endpoint that makes HTTP requests
+// to the admin service setOrganizationOnboardingStack server.
+func (c *Client) SetOrganizationOnboardingStack() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSetOrganizationOnboardingStackRequest(c.encoder)
+		decodeResponse = DecodeSetOrganizationOnboardingStackResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildSetOrganizationOnboardingStackRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SetOrganizationOnboardingStackDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("admin", "setOrganizationOnboardingStack", err)
 		}
 		return decodeResponse(resp)
 	}

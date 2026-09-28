@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IntegrationCoverageRouteImport } from './routes/integration-coverage'
 import { Route as McpSetupRouteImport } from './routes/mcp-setup'
+import { Route as OnboardingStepsRouteImport } from './routes/onboarding-steps'
 import { Route as OrganizationsRouteImport } from './routes/organizations'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as RemoteSessionIssuersRouteImport } from './routes/remote-session-issuers'
@@ -48,6 +49,11 @@ const IntegrationCoverageRoute = IntegrationCoverageRouteImport.update({
 const McpSetupRoute = McpSetupRouteImport.update({
   id: '/mcp-setup',
   path: '/mcp-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingStepsRoute = OnboardingStepsRouteImport.update({
+  id: '/onboarding-steps',
+  path: '/onboarding-steps',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizationsRoute = OrganizationsRouteImport.update({
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-steps': typeof OnboardingStepsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
   '/remote-session-issuers': typeof RemoteSessionIssuersRouteWithChildren
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-steps': typeof OnboardingStepsRoute
   '/stoken-calculator': typeof StokenCalculatorRoute
   '/projects/$idOrSlug': typeof ProjectsIdOrSlugRoute
   '/organizations': typeof OrganizationsIndexRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-steps': typeof OnboardingStepsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
   '/remote-session-issuers': typeof RemoteSessionIssuersRouteWithChildren
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-steps'
     | '/organizations'
     | '/projects'
     | '/remote-session-issuers'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-steps'
     | '/stoken-calculator'
     | '/projects/$idOrSlug'
     | '/organizations'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-steps'
     | '/organizations'
     | '/projects'
     | '/remote-session-issuers'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IntegrationCoverageRoute: typeof IntegrationCoverageRoute
   McpSetupRoute: typeof McpSetupRoute
+  OnboardingStepsRoute: typeof OnboardingStepsRoute
   OrganizationsRoute: typeof OrganizationsRouteWithChildren
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RemoteSessionIssuersRoute: typeof RemoteSessionIssuersRouteWithChildren
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp-setup'
       fullPath: '/mcp-setup'
       preLoaderRoute: typeof McpSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding-steps': {
+      id: '/onboarding-steps'
+      path: '/onboarding-steps'
+      fullPath: '/onboarding-steps'
+      preLoaderRoute: typeof OnboardingStepsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizations': {
@@ -619,6 +639,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IntegrationCoverageRoute: IntegrationCoverageRoute,
   McpSetupRoute: McpSetupRoute,
+  OnboardingStepsRoute: OnboardingStepsRoute,
   OrganizationsRoute: OrganizationsRouteWithChildren,
   ProjectsRoute: ProjectsRouteWithChildren,
   RemoteSessionIssuersRoute: RemoteSessionIssuersRouteWithChildren,
