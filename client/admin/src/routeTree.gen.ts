@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IntegrationCoverageRouteImport } from './routes/integration-coverage'
 import { Route as McpSetupRouteImport } from './routes/mcp-setup'
+import { Route as OnboardingPlaybooksRouteImport } from './routes/onboarding-playbooks'
 import { Route as OnboardingStepsRouteImport } from './routes/onboarding-steps'
 import { Route as OrganizationsRouteImport } from './routes/organizations'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -49,6 +50,11 @@ const IntegrationCoverageRoute = IntegrationCoverageRouteImport.update({
 const McpSetupRoute = McpSetupRouteImport.update({
   id: '/mcp-setup',
   path: '/mcp-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingPlaybooksRoute = OnboardingPlaybooksRouteImport.update({
+  id: '/onboarding-playbooks',
+  path: '/onboarding-playbooks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingStepsRoute = OnboardingStepsRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-playbooks': typeof OnboardingPlaybooksRoute
   '/onboarding-steps': typeof OnboardingStepsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-playbooks': typeof OnboardingPlaybooksRoute
   '/onboarding-steps': typeof OnboardingStepsRoute
   '/stoken-calculator': typeof StokenCalculatorRoute
   '/projects/$idOrSlug': typeof ProjectsIdOrSlugRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/integration-coverage': typeof IntegrationCoverageRoute
   '/mcp-setup': typeof McpSetupRoute
+  '/onboarding-playbooks': typeof OnboardingPlaybooksRoute
   '/onboarding-steps': typeof OnboardingStepsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-playbooks'
     | '/onboarding-steps'
     | '/organizations'
     | '/projects'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-playbooks'
     | '/onboarding-steps'
     | '/stoken-calculator'
     | '/projects/$idOrSlug'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/'
     | '/integration-coverage'
     | '/mcp-setup'
+    | '/onboarding-playbooks'
     | '/onboarding-steps'
     | '/organizations'
     | '/projects'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IntegrationCoverageRoute: typeof IntegrationCoverageRoute
   McpSetupRoute: typeof McpSetupRoute
+  OnboardingPlaybooksRoute: typeof OnboardingPlaybooksRoute
   OnboardingStepsRoute: typeof OnboardingStepsRoute
   OrganizationsRoute: typeof OrganizationsRouteWithChildren
   ProjectsRoute: typeof ProjectsRouteWithChildren
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp-setup'
       fullPath: '/mcp-setup'
       preLoaderRoute: typeof McpSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding-playbooks': {
+      id: '/onboarding-playbooks'
+      path: '/onboarding-playbooks'
+      fullPath: '/onboarding-playbooks'
+      preLoaderRoute: typeof OnboardingPlaybooksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding-steps': {
@@ -639,6 +659,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IntegrationCoverageRoute: IntegrationCoverageRoute,
   McpSetupRoute: McpSetupRoute,
+  OnboardingPlaybooksRoute: OnboardingPlaybooksRoute,
   OnboardingStepsRoute: OnboardingStepsRoute,
   OrganizationsRoute: OrganizationsRouteWithChildren,
   ProjectsRoute: ProjectsRouteWithChildren,
