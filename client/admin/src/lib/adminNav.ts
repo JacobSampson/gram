@@ -15,6 +15,7 @@ import {
   Grid2X2Icon,
   KeyRoundIcon,
   PlugZapIcon,
+  ListChecksIcon,
 } from "lucide-react";
 
 export const ADMIN_NAV_GROUPS = [
@@ -52,6 +53,12 @@ export const ADMIN_NAV_GROUPS = [
         label: "Support matrix",
         keywords: "support matrix products capabilities integrations",
         icon: Grid2X2Icon,
+      },
+      {
+        to: "/onboarding-steps",
+        label: "Steps",
+        keywords: "onboarding steps setup wizard cards groups playbooks",
+        icon: ListChecksIcon,
       },
       {
         to: "/remote-session-issuers",

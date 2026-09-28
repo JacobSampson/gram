@@ -25,12 +25,14 @@ func TestService_ListSetupTasksProjectsCatalog(t *testing.T) {
 	result, err := ti.service.ListSetupTasks(ctx, &gen.ListSetupTasksPayload{})
 	require.NoError(t, err)
 
-	// The default board is the guided journey only: the eight tasks marked
-	// HiddenByDefault stay off it for every org.
-	require.Len(t, result.Tasks, 4)
-	require.Equal(t, "identity-provider", result.Tasks[0].Key)
-	require.Equal(t, "additional-agent-config", result.Tasks[3].Key)
-	for _, key := range []string{"create-marketplace", "enable-logging", "confirm-traffic", "anthropic-admin-controls", "litellm", "distribute-servers", "configure-policies", "platform-mcp"} {
+	// The default board is the guided journey only: the tasks marked
+	// HiddenByDefault stay off it for every org. A group precedes its cards.
+	keys := make([]string, 0, len(result.Tasks))
+	for _, task := range result.Tasks {
+		keys = append(keys, task.Key)
+	}
+	require.Equal(t, []string{"identity-provider", "anthropic-observability", "agent-observability", "instrument-agents", "additional-agent-config"}, keys)
+	for _, key := range []string{"create-marketplace", "enable-logging", "confirm-traffic", "anthropic-admin-controls", "litellm", "distribute-servers", "configure-policies", "platform-mcp", "mcp-distribution"} {
 		require.Nil(t, setupTask(result.Tasks, key), key)
 	}
 	for _, task := range result.Tasks {
@@ -38,6 +40,14 @@ func TestService_ListSetupTasksProjectsCatalog(t *testing.T) {
 		require.Equal(t, "todo", task.Status, task.Key)
 		require.False(t, task.Hidden, task.Key)
 	}
+	observe := setupTask(result.Tasks, "agent-observability")
+	require.True(t, observe.Group)
+	require.Nil(t, observe.ParentKey)
+	require.Nil(t, observe.Assignee)
+	require.False(t, observe.CompletedByFact)
+	require.Equal(t, "agent-observability", *setupTask(result.Tasks, "instrument-agents").ParentKey)
+	require.False(t, setupTask(result.Tasks, "identity-provider").Group)
+	require.Nil(t, setupTask(result.Tasks, "identity-provider").ParentKey)
 	require.False(t, setupTask(result.Tasks, "identity-provider").CompletedByFact)
 	require.False(t, setupTask(result.Tasks, "instrument-agents").CompletedByFact)
 }
@@ -57,21 +67,22 @@ func TestService_ListSetupTasksRevealsDefaultHiddenToPlatformAdmin(t *testing.T)
 	includeHidden := true
 	result, err := ti.service.ListSetupTasks(platformCtx, &gen.ListSetupTasksPayload{IncludeHidden: &includeHidden})
 	require.NoError(t, err)
-	require.Len(t, result.Tasks, 12)
-	require.Equal(t, "configure-policies", result.Tasks[11].Key)
-	for _, key := range []string{"create-marketplace", "enable-logging", "confirm-traffic", "anthropic-admin-controls", "litellm", "distribute-servers", "configure-policies", "platform-mcp"} {
+	require.Len(t, result.Tasks, 14)
+	require.Equal(t, "configure-policies", result.Tasks[13].Key)
+	for _, key := range []string{"create-marketplace", "enable-logging", "confirm-traffic", "anthropic-admin-controls", "litellm", "distribute-servers", "configure-policies", "platform-mcp", "mcp-distribution"} {
 		require.True(t, setupTask(result.Tasks, key).Hidden, key)
 	}
 	require.False(t, setupTask(result.Tasks, "identity-provider").Hidden)
+	require.True(t, setupTask(result.Tasks, "mcp-distribution").Group, "a group with only hidden cards is listed hidden")
 	keys := make([]string, 0, len(result.Tasks))
 	for _, task := range result.Tasks {
 		keys = append(keys, task.Key)
 	}
 	require.ElementsMatch(t, []string{
-		"create-marketplace", "enable-logging",
-		"identity-provider", "anthropic-observability", "anthropic-admin-controls",
-		"instrument-agents", "litellm", "additional-agent-config", "confirm-traffic",
-		"distribute-servers", "configure-policies", "platform-mcp",
+		"identity-provider", "enable-logging",
+		"anthropic-observability", "agent-observability", "instrument-agents", "confirm-traffic", "litellm",
+		"additional-agent-config", "mcp-distribution", "create-marketplace", "distribute-servers", "platform-mcp",
+		"anthropic-admin-controls", "configure-policies",
 	}, keys)
 	require.Empty(t, setupTask(result.Tasks, "distribute-servers").BlockedBy)
 }
@@ -86,9 +97,8 @@ func TestService_ListSetupTasksAppliesCompletionFactsWithoutWriting(t *testing.T
 	require.NoError(t, err)
 	require.True(t, org.WorkosID.Valid)
 
-	// Single sign-on alone is not the identity provider outcome: directory
-	// sync is part of the same card, so the task stays open until both are
-	// configured.
+	// Single sign-on alone is not the identity provider outcome: the card
+	// also covers directory sync, so it stays open until both are configured.
 	require.NoError(t, orgrepo.New(ti.conn).SetSSOEnabled(ctx, orgrepo.SetSSOEnabledParams{WorkosID: org.WorkosID, Enabled: conv.PtrToPGBool(conv.PtrEmpty(true)), WorkosLastEventID: pgtype.Text{}}))
 	result, err := ti.service.ListSetupTasks(ctx, &gen.ListSetupTasksPayload{})
 	require.NoError(t, err)
@@ -381,8 +391,11 @@ func TestService_UpdateSetupTaskCompletesMergedCatalog(t *testing.T) {
 
 	result, err := ti.service.ListSetupTasks(ctx, &gen.ListSetupTasksPayload{})
 	require.NoError(t, err)
-	require.Len(t, result.Tasks, 4)
+	require.Len(t, result.Tasks, 5)
 	for _, task := range result.Tasks {
 		require.Equal(t, "done", task.Status, task.Key)
 	}
+	// Groups cannot be marked by hand; their cards decide.
+	_, err = ti.service.UpdateSetupTask(ctx, &gen.UpdateSetupTaskPayload{TaskKey: "agent-observability", Status: &done})
+	requireOopsCode(t, err, oops.CodeBadRequest)
 }

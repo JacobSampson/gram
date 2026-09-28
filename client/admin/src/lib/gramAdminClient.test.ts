@@ -157,6 +157,7 @@ describe("generated admin boundary", () => {
           title: "Create marketplace",
           description: "Publish marketplace",
           hidden: false,
+          group: false,
         },
       ],
       presets: [

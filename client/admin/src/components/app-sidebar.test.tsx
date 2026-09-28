@@ -203,6 +203,7 @@ describe("AppSidebar", () => {
         label: "Platform Management",
         links: [
           { label: "Support matrix", href: "/integration-coverage" },
+          { label: "Steps", href: "/onboarding-steps" },
           { label: "Remote Session Issuers", href: "/remote-session-issuers" },
           { label: "Admin MCP", href: "/mcp-setup" },
         ],

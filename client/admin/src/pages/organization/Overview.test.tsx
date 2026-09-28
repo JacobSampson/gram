@@ -34,6 +34,12 @@ vi.mock("sonner", () => ({
   toast: { success: mocks.toastSuccess },
 }));
 
+// The stack form has its own suite and reads through the SDK, which this suite
+// leaves unstubbed: unmocked it reaches the real fetch and waits on a socket.
+vi.mock("@/pages/organization/OnboardingStack", () => ({
+  OnboardingStack: () => <p>Stack form</p>,
+}));
+
 vi.mock("@/lib/gramAdminApi", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/gramAdminApi")>();
   return {
@@ -179,6 +185,23 @@ describe("Overview", () => {
     expect(
       screen.queryByRole("button", { name: "Copy Stripe subscription ID" }),
     ).toBeNull();
+  });
+
+  it("holds the stack between the details and the danger zone", async () => {
+    await renderRouteTree(routeTree, {
+      initialPath: `/organizations/${ORG.slug}`,
+    });
+
+    await screen.findByRole("heading", { name: "Details" });
+    const stack = panelNamed("Stack");
+    expect(within(stack).getByText("Stack form")).toBeTruthy();
+    const order = screen
+      .getAllByRole("heading", { level: 5 })
+      .map((heading) => heading.textContent)
+      .filter((name) =>
+        ["Details", "Stack", "Danger zone"].includes(name ?? ""),
+      );
+    expect(order).toEqual(["Details", "Stack", "Danger zone"]);
   });
 
   it("marks an organization a platform admin created", async () => {
