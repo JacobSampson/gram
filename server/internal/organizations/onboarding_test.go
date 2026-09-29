@@ -184,10 +184,7 @@ func TestOnboardingSerializesWithTaskUpdates(t *testing.T) {
 		_, err := ti.service.UpdateSetupTask(ctx, &gen.UpdateSetupTaskPayload{TaskKey: "instrument-agents", Status: new("in_progress")})
 		updated <- err
 	}()
-	require.Eventually(t, func() bool {
-		count, err := orgrepo.New(ti.conn).CountBlockedSetupTaskUpdatesFixture(ctx)
-		return err == nil && count == 2
-	}, 30*time.Second, 10*time.Millisecond, "both operations must reach the organization lock")
+	testenv.WaitForBackendsBlockedBy(t, ctx, ti.conn, testenv.BackendPID(tx), 2)
 	select {
 	case err := <-saved:
 		t.Fatalf("configuration did not wait for organization lock: %v", err)
