@@ -101,6 +101,8 @@ func (c *checker) requestsSince(t time.Time, pathPrefix string) []upstreamReques
 
 func (c *checker) run(ctx context.Context, admitted gatewayState) {
 	c.checkSnapshot(admitted)
+	// Measure idle behavior before the burst test can leave speculative transport dials in flight.
+	c.checkSoak(ctx)
 	c.checkJSONEcho(ctx)
 	c.checkStatusPassthrough(ctx)
 	c.checkRootPin(ctx)
@@ -110,7 +112,7 @@ func (c *checker) run(ctx context.Context, admitted gatewayState) {
 	c.checkSSE(ctx)
 	c.checkConcurrency(ctx)
 	c.checkControlIsolation(ctx)
-	c.checkSoak(ctx)
+	c.checkPostTrafficIdle(ctx)
 	c.checkJSONEchoNamed(ctx, "post_soak_echo")
 	c.checkSessionPinning()
 	c.checkDiagnostics(ctx)
@@ -565,6 +567,25 @@ func (c *checker) checkSoak(ctx context.Context) {
 	} else {
 		c.add("idle_no_target_probes", idleConns == 0, "%d new TCP connections to target during idle window; want 0 when diagnostics are not negotiated", idleConns)
 	}
+}
+
+// checkPostTrafficIdle preserves HTTP-probe detection after ordinary traffic.
+// TCP accepts are not asserted here: burst transports can leave speculative dials.
+func (c *checker) checkPostTrafficIdle(ctx context.Context) {
+	started := time.Now()
+	duration := max(c.o.soak, 35*time.Second)
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		c.add("post_traffic_idle_no_target_http", false, "idle window interrupted: %v", ctx.Err())
+		return
+	case <-timer.C:
+	}
+	requests := c.requestsSince(started, "")
+	c.facts["post_traffic_idle_duration_seconds"] = duration.Seconds()
+	c.add("post_traffic_idle_no_target_http", len(requests) == 0,
+		"%d HTTP requests reached target during %s after traffic; want 0", len(requests), duration)
 }
 
 // diagnosticsExpected is true only when both sides support diagnostics and the

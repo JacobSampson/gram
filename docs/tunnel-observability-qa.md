@@ -59,9 +59,10 @@ rerun by Codex and passed.
 
 Claude review follow-ups: restored Go import grouping, exposed server switches
 through the existing CLI flag/EnvVars convention, and changed a wholly unchecked
-target summary to “Not checked”. Accepted limitation: producers do not drain
-in-memory aggregates on shutdown; the plan now explicitly describes recent and
-pending-retry loss, including the absence of a prior-boot loss watermark. This
+target summary to “Not checked”. At that review, producers did not drain
+in-memory aggregates on shutdown. The September 29 Cubic follow-up below adds a
+bounded graceful drain; abrupt-exit and exhausted-budget loss remain possible,
+including the absence of a prior-boot loss watermark. This
 is diagnostic history, not a complete audit or billing ledger. Demo captions
 identify seeded history and disclose the session-prefix redaction.
 
@@ -181,3 +182,67 @@ above. The final browser check returned zero MCP requests over 35 seconds after
 reloading Overview; the five-page navigation check also passed with zero MCP
 requests. Owner-restricted UI captures are local review artifacts, not a separate
 product UI or a production deployment.
+
+## September 29 Cubic review follow-up
+
+The follow-up fixes cover bounded publisher shutdown, accurate MCP outcomes,
+independent history enablement, strict required-field presence with additive
+unknown-field handling, source churn/retention, UI state handling, and safer,
+stronger compatibility checks. Main was merged at `679c03b6cf` before final checks.
+The full comment disposition is in [the review ledger](tunnel-observability-review.md).
+
+Fresh local verification:
+
+| Check                                                             | Result                                  |
+| ----------------------------------------------------------------- | --------------------------------------- |
+| Focused backend suite (proxy, manager, model views, storage, API) | 610 passed                              |
+| Dashboard feature and collapsed-assistant tests                   | 30 passed                               |
+| Dashboard type check and pinned server lint                       | Passed; linter deprecation warning only |
+| Agent, wire, collector, gateway and route race tests              | Passed                                  |
+| Publisher final-flush/stop ordering race test                     | Passed                                  |
+| Demo-seed safety checks                                           | 43 passed                               |
+| Frozen/released/new/opted-out compatibility matrix                | All 24 pairs passed                     |
+| Unacknowledged, unread, slow and malformed diagnostic peers       | All four scenarios passed               |
+| Agent/gateway rollback transitions                                | All four passed                         |
+| Near-full yamux pressure                                          | 232 held streams, 70-second hold passed |
+
+Final matrix reports are local-only under
+`/tmp/gram-tunnel-cubic/run.BkaYKiR3/final-{old-src,main-src,new-src,new-src-nodiag}/report.json`;
+faults and pressure/rollback reports are under `faults/` and
+`transitions-nearfull/` in the same root. Build/image provenance is retained in
+that run directory. Logs are `/tmp/tunnel-cubic-*.log`. These paths are not durable
+CI artifacts; use the compatibility README to reproduce the checks.
+
+Earlier attempts exposed a harness assertion incorrectly requiring a new control
+response from frozen gateways; it now requires legacy 200 or new 404 explicitly.
+Two earlier post-burst idle checks observed 63 target TCP accepts with zero HTTP.
+An isolated rerun passed. The first final matrix measures idle before burst traffic and
+all 24 pairs pass. A review follow-up adds a second, at least 35-second HTTP-idle
+window after traffic; its full 24-pair rerun is recorded below when complete. Late speculative dials are a possible explanation, not a proven
+cause; original reports remain alongside the final runs.
+
+The refreshed history capture exercises 1 hour, 24 hours, 7 days, the data table
+and no-agent state against synthetic seed history. The target capture cuts between
+five independent, idle Docker Compose fixtures. It shows DNS failure, connection
+refusal, and three network-reachable targets; HTTP/MCP remains Not observed.
+Both capture sessions observed zero browser requests to the MCP endpoint; the
+agent cards also show no observed HTTP traffic. No
+synthetic discovery or tool calls were used. Captures crop local account details,
+hide the unrelated development overlay, and redact session prefixes only for
+publication. Raw frames and exported GIFs remain under the ignored
+`.playwright-cli/pr-demos/6874/` directory.
+
+Independent review found and fixed an additional UI failure mode: history and
+live queries now opt out of the global error boundary so one failed request does
+not hide the other section. Real QueryClient regressions both fail with the
+fix removed and pass with it restored. The graceful-drain documentation and GIF
+crops were corrected, and post-traffic idle coverage was restored.
+
+Published refreshed demos replace the existing PR comments:
+[history](https://github.com/speakeasy-api/gram/pull/6874#issuecomment-5872646970)
+and [target checks](https://github.com/speakeasy-api/gram/pull/6874#issuecomment-5872654311).
+Both 12-second GIF URLs returned HTTP 200 with image/gif and bytes matching the
+locally inspected exports.
+
+Fresh independent completion review verdicts will be recorded after reviewers
+finish inspecting the final artifacts.

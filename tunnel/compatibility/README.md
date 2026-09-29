@@ -91,7 +91,8 @@ Agents: `old-src`, `old-image`, `main-src`, `main-image`, `new-src`,
   forwards.
 - Consumer requests to `/_tunnel/*` never reach the target, and
   unauthenticated status returns 404.
-- Idle soak with one long-lived stream. Events arrive on time and the session
+- Frozen gateways retain the legacy 200 hello response; enriched gateways return 404.
+- Pre-burst idle soak with one long-lived stream. Events arrive on time and the session
   stays single and stable. No HTTP reaches the target from diagnostics, and no
   TCP probes happen unless both sides negotiate diagnostics.
 - One agent session during steady state. No steady-state disconnects, WARN/ERROR or
@@ -155,3 +156,7 @@ Frozen baseline commits must exist locally. For a shallow checkout, run
 revision explicitly. Relative `--work` paths are supported; existing contents
 are never deleted. Each invocation creates its own child and prints its paths.
 Near-full runs require a hold of at least 65 seconds and a positive tick interval.
+
+After forwarding and burst checks, each pair also observes at least 35 seconds
+with no new HTTP requests to the target. This covers post-traffic probe regressions
+without treating delayed speculative TCP dials as synthetic HTTP requests.

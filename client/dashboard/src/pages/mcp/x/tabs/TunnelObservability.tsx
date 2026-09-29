@@ -66,6 +66,7 @@ export function TunnelObservability({
   const [window, setWindow] = useState<Window>("day");
   const history = useGetTunneledMcpServerMetrics({ id, window }, undefined, {
     enabled: !!id,
+    throwOnError: false,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });

@@ -153,6 +153,7 @@ export function TunneledMcpConnectionsPanel({
       getTunneledMcpServerArgs(tunneledMcpServerId),
       undefined,
       {
+        throwOnError: false,
         refetchInterval: CONNECTIONS_POLL_MS,
         refetchIntervalInBackground: false,
       },
