@@ -74,6 +74,8 @@ const (
 	GramRiskV1PromptPolicyAnalysis Topic = "gram.risk.v1.PromptPolicyAnalysis"
 	// GramTelemetryV1LogRecord publishes to gram-telemetry-v1-log-record.
 	GramTelemetryV1LogRecord Topic = "gram.telemetry.v1.LogRecord"
+	// GramTelemetryV1SessionObserved publishes to gram-telemetry-v1-session-observed.
+	GramTelemetryV1SessionObserved Topic = "gram.telemetry.v1.SessionObserved"
 	// GramTunnelV1MetricsSnapshot publishes to gram-tunnel-v1-metrics-snapshot.
 	GramTunnelV1MetricsSnapshot Topic = "gram.tunnel.v1.MetricsSnapshot"
 	// GramWebhooksV1Event publishes to gram-webhooks-v1-event.
@@ -106,6 +108,7 @@ func All() []Topic {
 		GramRiskV1PromptInjectionAnalysis,
 		GramRiskV1PromptPolicyAnalysis,
 		GramTelemetryV1LogRecord,
+		GramTelemetryV1SessionObserved,
 		GramTunnelV1MetricsSnapshot,
 		GramWebhooksV1Event,
 	}
@@ -160,6 +163,8 @@ func Lookup(name string) (Topic, bool) {
 		return GramRiskV1PromptPolicyAnalysis, true
 	case GramTelemetryV1LogRecord:
 		return GramTelemetryV1LogRecord, true
+	case GramTelemetryV1SessionObserved:
+		return GramTelemetryV1SessionObserved, true
 	case GramTunnelV1MetricsSnapshot:
 		return GramTunnelV1MetricsSnapshot, true
 	case GramWebhooksV1Event:
@@ -221,6 +226,8 @@ func newPublisher(ctx context.Context, broker gcp.PublisherBroker, topic Topic, 
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &riskv1.PromptPolicyAnalysis{}, gcp.WithEncodedPublishSettings(settings))
 	case GramTelemetryV1LogRecord:
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &telemetryv1.LogRecord{}, gcp.WithEncodedPublishSettings(settings))
+	case GramTelemetryV1SessionObserved:
+		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &telemetryv1.SessionObserved{}, gcp.WithEncodedPublishSettings(settings))
 	case GramTunnelV1MetricsSnapshot:
 		return gcp.PubSubEncodedPublisherForMessage(ctx, broker, &tunnelv1.MetricsSnapshot{}, gcp.WithEncodedPublishSettings(settings))
 	case GramWebhooksV1Event:

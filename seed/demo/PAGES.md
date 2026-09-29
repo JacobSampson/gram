@@ -134,9 +134,12 @@ fictional user-owned upstream account shared by **Release assistant** and
 6 is the requesting human session; its issuer is explicitly linked to the
 upstream client. Both bindings retain the same exact session ID, not a copy of
 its credential. The original three agent lifecycle fixtures remain unchanged.
-The account has invalid ciphertext, no refresh token, auto-refresh disabled,
-and reserved `.invalid` issuer metadata. It is display-only, not a live OAuth
-integration. All IDs reuse `Spec.NameSeed` and retarget with the tenant.
+The account has invalid ciphertext, no refresh token and auto-refresh disabled.
+Its client sits under Linear's remote identity provider (reserved example
+endpoints), so Linear's user session issuer binds clients of one remote issuer
+and the `mcp_servers.remote_session_issuer_id` stamp stays derivable. It is
+display-only, not a live OAuth integration. All IDs reuse `Spec.NameSeed` and
+retarget with the tenant.
 Reseeding deletes bindings before sessions, issuers, agents and projects.
 Browser verification: `[~]` (not yet verified); see check 18 in `verify.md`.
 
@@ -158,14 +161,14 @@ present in a developer's org and deliberately absent from the shared demo org.
 
 ## Not seeded (deliberate)
 
-| Page                         | Why                                                                                                                                                                                                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Plugins / Assistants         | Auto-provision on first visit; empty state is intentional                                                                                                                                                                                              |
-| Integrations / Triggers      | Acceptable empty states                                                                                                                                                                                                                                |
-| Settings                     | Render fine without seed data                                                                                                                                                                                                                          |
-| ChatGPT/Work usage split     | Later phase (`chatgpt:usage:metrics` rows)                                                                                                                                                                                                             |
-| Logs page content            | Enterprise-gated for the demo account type (README change 7)                                                                                                                                                                                           |
-| Remote MCP identity settings | PG Remote MCP fixtures span User (Linear: `remote_session_issuers` + `remote_session_clients` + issuer binding), Agent (Slack: inert static Authorization header), and None (GitHub: no client/header); all values are deterministic and nonfunctional | `[x]` |
+| Page                         | Why                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plugins / Assistants         | Auto-provision on first visit; empty state is intentional                                                                                                                                                                                                                                                                                                                         |
+| Integrations / Triggers      | Acceptable empty states                                                                                                                                                                                                                                                                                                                                                           |
+| Settings                     | Render fine without seed data                                                                                                                                                                                                                                                                                                                                                     |
+| ChatGPT/Work usage split     | Later phase (`chatgpt:usage:metrics` rows)                                                                                                                                                                                                                                                                                                                                        |
+| Logs page content            | Enterprise-gated for the demo account type (README change 7)                                                                                                                                                                                                                                                                                                                      |
+| Remote MCP identity settings | PG Remote MCP fixtures span User Identity (Linear: `remote_session_issuers` + `remote_session_clients` + issuer binding, with `mcp_servers.remote_session_issuer_id` stamped to the one remote issuer every bound client shares), Service Account (Slack: inert static Authorization header), and None (GitHub: no client/header); all values are deterministic and nonfunctional | `[x]` |
 
 ## Rules when extending
 
@@ -189,7 +192,7 @@ present in a developer's org and deliberately absent from the shared demo org.
 6. Give every row surface its own trace-id namespace; shared trace ids merge
    into one unclassifiable trace in `trace_summaries`.
 
-Anthropic inference hooks: Agent Sessions includes “Claude inference conversation” with a user prompt, assistant reply, and follow-up. The source is Claude Chat; Raw view retains the original content blocks.
+Anthropic inference hooks: Agent Sessions includes “Claude inference conversation” with a user prompt, assistant reply, and follow-up. The source is Claude Chat; Raw view retains the original content blocks. This transcript-only conversation contributes one chat to the owner’s identity metrics and analytics session lists, with three messages and zero reported token/cost usage.
 
 Anthropic inference hooks on AI Integrations shows **Finish setup** with a pending URL and no signing secret. The seeded configuration never permits real inference deliveries.
 

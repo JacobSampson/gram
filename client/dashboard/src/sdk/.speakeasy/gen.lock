@@ -497,6 +497,9 @@ trackedFiles:
   src/funcs/projectsSetOrganizationWhitelist.ts: {}
   src/funcs/projectsUpdate.ts: {}
   src/funcs/projectsUpsertAllowedOrigin.ts: {}
+  src/funcs/registryDiscoveryDiscoverServers.ts: {}
+  src/funcs/registryDiscoveryDiscoverVersion.ts: {}
+  src/funcs/registryDiscoveryDiscoverVersions.ts: {}
   src/funcs/remoteMcpCreateServer.ts: {}
   src/funcs/remoteMcpCreateServerAndMcpServer.ts: {}
   src/funcs/remoteMcpCreateServerHeader.ts: {}
@@ -534,6 +537,7 @@ trackedFiles:
   src/funcs/remoteSessionIssuersUpdate.ts: {}
   src/funcs/remoteSessionsAttachBinding.ts: {}
   src/funcs/remoteSessionsCommitServerIdentityConfiguration.ts: {}
+  src/funcs/remoteSessionsCount.ts: {}
   src/funcs/remoteSessionsDetachBinding.ts: {}
   src/funcs/remoteSessionsList.ts: {}
   src/funcs/remoteSessionsListBindings.ts: {}
@@ -901,6 +905,7 @@ trackedFiles:
   src/models/components/commitserveridentityconfigurationresult.ts: {}
   src/models/components/confirmoktaresourceconnectionsrequestbody.ts: {}
   src/models/components/confirmoktaresourceconnectionsresult.ts: {}
+  src/models/components/countremotesessionsresult.ts: {}
   src/models/components/createagentform.ts: {}
   src/models/components/createagentpolicygrantform.ts: {}
   src/models/components/createassistantform.ts: {}
@@ -1488,6 +1493,8 @@ trackedFiles:
   src/models/components/redeployresult.ts: {}
   src/models/components/registerrequestbody.ts: {}
   src/models/components/registerworkloadissuerform.ts: {}
+  src/models/components/registrydiscoverymetadata.ts: {}
+  src/models/components/registrydiscoverypage.ts: {}
   src/models/components/remotemcpserver.ts: {}
   src/models/components/remotemcpserverheader.ts: {}
   src/models/components/remotesession.ts: {}
@@ -1892,6 +1899,7 @@ trackedFiles:
   src/models/errors/gramerror.ts: {}
   src/models/errors/httpclienterrors.ts: {}
   src/models/errors/killswitchconflict.ts: {}
+  src/models/errors/registrydiscoverydiscoverserversresponsebody.ts: {}
   src/models/errors/responsevalidationerror.ts: {}
   src/models/errors/sdkvalidationerror.ts: {}
   src/models/errors/serviceerror.ts: {}
@@ -1931,6 +1939,7 @@ trackedFiles:
   src/models/operations/commitserveridentityconfiguration.ts: {}
   src/models/operations/compileexpr.ts: {}
   src/models/operations/confirmoktaresourceconnections.ts: {}
+  src/models/operations/countremotesessions.ts: {}
   src/models/operations/createagent.ts: {}
   src/models/operations/createagentpolicygrant.ts: {}
   src/models/operations/createagentsessionhandoff.ts: {}
@@ -2059,6 +2068,9 @@ trackedFiles:
   src/models/operations/disablewebhooks.ts: {}
   src/models/operations/disconnectslackdirectoryconnection.ts: {}
   src/models/operations/discoverremotemcpprotectedresourcemetadata.ts: {}
+  src/models/operations/discoverservers.ts: {}
+  src/models/operations/discoverversion.ts: {}
+  src/models/operations/discoverversions.ts: {}
   src/models/operations/dismissplatformmcponboarding.ts: {}
   src/models/operations/dismissskillsuggestion.ts: {}
   src/models/operations/distributeplatformmcponboardingcandidate.ts: {}
@@ -3292,6 +3304,12 @@ trackedFiles:
   src/react-query/register.ts: {}
   src/react-query/registerDomain.ts: {}
   src/react-query/registerWorkloadIssuer.ts: {}
+  src/react-query/registryDiscoveryDiscoverServers.core.ts: {}
+  src/react-query/registryDiscoveryDiscoverServers.ts: {}
+  src/react-query/registryDiscoveryDiscoverVersion.core.ts: {}
+  src/react-query/registryDiscoveryDiscoverVersion.ts: {}
+  src/react-query/registryDiscoveryDiscoverVersions.core.ts: {}
+  src/react-query/registryDiscoveryDiscoverVersions.ts: {}
   src/react-query/remoteMcpCreateServerAndMcpServer.ts: {}
   src/react-query/remoteMcpServerHeaders.core.ts: {}
   src/react-query/remoteMcpServerHeaders.ts: {}
@@ -3313,6 +3331,8 @@ trackedFiles:
   src/react-query/remoteSessions.core.ts: {}
   src/react-query/remoteSessions.ts: {}
   src/react-query/remoteSessionsAttachBinding.ts: {}
+  src/react-query/remoteSessionsCount.core.ts: {}
+  src/react-query/remoteSessionsCount.ts: {}
   src/react-query/remoteSessionsDetachBinding.ts: {}
   src/react-query/remoteSessionsListBindings.core.ts: {}
   src/react-query/remoteSessionsListBindings.ts: {}
@@ -3752,6 +3772,7 @@ trackedFiles:
   src/sdk/policybypassrequests.ts: {}
   src/sdk/policychallenges.ts: {}
   src/sdk/projects.ts: {}
+  src/sdk/registrydiscovery.ts: {}
   src/sdk/remotemcp.ts: {}
   src/sdk/remotesessionclients.ts: {}
   src/sdk/remotesessionissuers.ts: {}
@@ -4317,6 +4338,18 @@ examples:
           application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": true}
         "500":
           application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": true}
+  countRemoteSessions:
+    speakeasy-default-count-remote-sessions:
+      parameters:
+        query:
+          remote_session_client_id: "6e8f6993-638e-49b3-ba41-8778e869e9ae"
+      responses:
+        "200":
+          application/json: {"subjects": 364709}
+        "400":
+          application/json: {"fault": true, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
+        "500":
+          application/json: {"fault": true, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
   createAPIKey:
     speakeasy-default-create-API-key:
       requestBody:
@@ -5840,6 +5873,54 @@ examples:
           application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": true}
         "500":
           application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": true}
+  discoverServers:
+    speakeasy-default-discover-servers:
+      parameters:
+        query:
+          include_deleted: false
+          limit: 25
+      responses:
+        "200":
+          application/json: {"metadata": {"count": 764587}, "servers": ["<value 1>"]}
+        "400":
+          application/json: {"error": "<value>"}
+        "401":
+          application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
+        "500":
+          application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
+  discoverVersion:
+    speakeasy-default-discover-version:
+      parameters:
+        path:
+          serverName: "<value>"
+          version: "<value>"
+        query:
+          include_deleted: false
+      responses:
+        "200":
+          application/json: "<value>"
+        "400":
+          application/json: {"error": "<value>"}
+        "401":
+          application/json: {"fault": true, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": false, "timeout": true}
+        "500":
+          application/json: {"fault": true, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": false, "timeout": true}
+  discoverVersions:
+    speakeasy-default-discover-versions:
+      parameters:
+        path:
+          serverName: "<value>"
+        query:
+          include_deleted: false
+      responses:
+        "200":
+          application/json: {"metadata": {"count": 591241}, "servers": []}
+        "400":
+          application/json: {"error": "<value>"}
+        "401":
+          application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
+        "500":
+          application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": true, "timeout": false}
   dismissPlatformMCPOnboarding:
     speakeasy-default-dismiss-platform-MCP-onboarding:
       responses:
