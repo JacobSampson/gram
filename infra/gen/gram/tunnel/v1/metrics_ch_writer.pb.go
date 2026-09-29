@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -23,7 +22,7 @@ const (
 )
 
 type MetricsCHWriter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -53,31 +52,27 @@ func (x *MetricsCHWriter) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MetricsCHWriter.ProtoReflect.Descriptor instead.
-func (*MetricsCHWriter) Descriptor() ([]byte, []int) {
-	return file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescGZIP(), []int{0}
+type MetricsCHWriter_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 MetricsCHWriter_builder) Build() *MetricsCHWriter {
+	m0 := &MetricsCHWriter{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 var File_gram_tunnel_v1_metrics_ch_writer_proto protoreflect.FileDescriptor
 
 const file_gram_tunnel_v1_metrics_ch_writer_proto_rawDesc = "" +
 	"\n" +
-	"&gram/tunnel/v1/metrics_ch_writer.proto\x12\x0egram.tunnel.v1\x1a\x1bgcp/pubsub/v1/options.proto\"J\n" +
-	"\x0fMetricsCHWriter:7\x92\xb5\x183\"\x02\b\x1e2\t\n" +
+	"&gram/tunnel/v1/metrics_ch_writer.proto\x12\x0egram.tunnel.v1\x1a\x1bgcp/pubsub/v1/options.proto\"R\n" +
+	"\x0fMetricsCHWriter:?\x92\xb5\x18;\x12\x04\b\x80\xf5$\x18\x00\"\x02\b<2\t\n" +
 	"\x02\b\n" +
-	"\x12\x03\b\xd8\x04J\x02\x10\x05R\x1egram.tunnel.v1.MetricsSnapshotBAZ?github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1b\x06proto3"
-
-var (
-	file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescOnce sync.Once
-	file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescData []byte
-)
-
-func file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescGZIP() []byte {
-	file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescOnce.Do(func() {
-		file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_gram_tunnel_v1_metrics_ch_writer_proto_rawDesc), len(file_gram_tunnel_v1_metrics_ch_writer_proto_rawDesc)))
-	})
-	return file_gram_tunnel_v1_metrics_ch_writer_proto_rawDescData
-}
+	"\x12\x03\b\xd8\x04J\x02\x10\n" +
+	"R\x1egram.tunnel.v1.MetricsSnapshotBAZ?github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1b\beditionsp\xe9\a"
 
 var file_gram_tunnel_v1_metrics_ch_writer_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_gram_tunnel_v1_metrics_ch_writer_proto_goTypes = []any{

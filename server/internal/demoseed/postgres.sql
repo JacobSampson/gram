@@ -2553,7 +2553,7 @@ E'--- a/SKILL.md\n+++ b/SKILL.md\n@@ -6,4 +6,5 @@\n # Refund handling\n \n 1. Ve
   -- fabricate a live customer agent in the shared demo environment.
   INSERT INTO tunneled_mcp_servers (id,project_id,name,key_hash,key_prefix,status,agent_version,last_seen_at)
   VALUES ('dec0de00-0000-4000-a000-000000000701',proj_a,'Private inventory tunnel',
-    md5('gram-demo-inert-tunnel-key'),'demo_inert','active','0.2.0',now()-interval '20 minutes');
+    md5('gram-demo-inert-tunnel-key'),'demo_inert','active','0.2.0',NULL);
   INSERT INTO mcp_servers (id,project_id,name,slug,tunneled_mcp_server_id,visibility)
   VALUES ('dec0de00-0000-4000-a000-000000000702',proj_a,'Private inventory','acme-demo-private-inventory',
     'dec0de00-0000-4000-a000-000000000701','private');

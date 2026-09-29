@@ -709,7 +709,7 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 	defer o11y.NoLogDefer(upstreamResp.Body.Close)
 
 	upstreamStatus = upstreamResp.StatusCode
-	if upstreamStatus >= 400 {
+	if upstreamStatus < 200 || upstreamStatus >= 300 {
 		observation.finish("error")
 	}
 	span.SetAttributes(attr.RemoteMCPProxyRemoteStatusCode(upstreamStatus))
@@ -740,6 +740,7 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 			// owed a terminal response event. Surface it as an upstream
 			// fault with the idle bound named, not a bare context error.
 			if streamIdledOut(upstreamResp.Body) {
+				observation.finish("incomplete")
 				return oops.E(oops.CodeGatewayError, streamErr,
 					"remote MCP server went idle mid-response (no data for %s)", p.StreamingTimeout,
 				).LogWarn(ctx, p.Logger)

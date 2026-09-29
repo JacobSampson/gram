@@ -1,8 +1,14 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TunneledMcpServerConnections } from "@gram/client/models/components/tunneledmcpserverconnections.js";
 import { TunnelObservability } from "./TunnelObservability";
+
+vi.mock("react-chartjs-2", () => ({
+  Line: (props: { "aria-label": string }) => (
+    <div role="img" aria-label={props["aria-label"]} />
+  ),
+}));
 
 const mocks = vi.hoisted(() => ({ history: vi.fn() }));
 vi.mock("@gram/client/react-query/getTunneledMcpServerMetrics.js", () => ({
@@ -124,11 +130,9 @@ it("does not color unavailable history green using cached successful responses",
       />
     </MemoryRouter>,
   );
-  const value = screen
-    .getByText("MCP responses")
-    .parentElement?.querySelector("span");
-  expect(value?.textContent).toBe("—");
-  expect(value?.classList.contains("text-default-success")).toBe(false);
+  const card = screen.getByRole("group", { name: "MCP responses" });
+  expect(within(card).getByText("—")).toBeTruthy();
+  expect(card.getAttribute("data-tone")).not.toBe("success");
   expect(screen.getByText("Activity history is unavailable")).toBeTruthy();
 });
 
@@ -215,4 +219,112 @@ it("shows aggregate HTTP phases without calling an open stream a failure", () =>
   ).toBe("24");
   expect(screen.getByText(/Open streams may be expected/)).toBeTruthy();
   expect(screen.getByText("Network reachable")).toBeTruthy();
+});
+
+it.each([
+  ["reachable", "Reachable"],
+  ["unreachable", "1 unreachable"],
+  ["unknown", "Not checked"],
+] as const)("represents %s transport state", (targetState, summary) => {
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={{
+          ...legacy,
+          connections: [
+            {
+              ...legacy.connections[0]!,
+              diagnostics: { state: "available", targetState },
+            },
+          ],
+        }}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings"
+      />
+    </MemoryRouter>,
+  );
+  expect(
+    within(screen.getByRole("group", { name: "Target transport" })).getByText(
+      summary,
+    ),
+  ).toBeTruthy();
+});
+
+it("renders completion-only history and its charts", () => {
+  mocks.history.mockReturnValue({
+    data: {
+      state: "available",
+      activeServers: 1,
+      bucketSeconds: 60,
+      points: [
+        {
+          time: new Date(),
+          successes: 2,
+          errors: 1,
+          coverageSamples: 1,
+          requestCoverageSamples: 1,
+          collectionPartial: false,
+        },
+      ],
+      clients: [],
+    },
+    isPending: false,
+    isError: false,
+  });
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={legacy}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings"
+      />
+    </MemoryRouter>,
+  );
+  expect(
+    within(screen.getByRole("group", { name: "MCP responses" })).getByText("2"),
+  ).toBeTruthy();
+  expect(screen.getByText("MCP requests")).toBeTruthy();
+});
+
+it("keeps live diagnostics visible when the history range is too large", () => {
+  mocks.history.mockReturnValue({
+    data: { state: "too_large", points: [], clients: [] },
+    isPending: false,
+    isError: false,
+  });
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={legacy}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings"
+      />
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByText("This time range contains too much activity"),
+  ).toBeTruthy();
+  expect(screen.getByText("Agents & target checks")).toBeTruthy();
+});
+
+it("does not claim disconnection when collection is unavailable", () => {
+  render(
+    <MemoryRouter>
+      <TunnelObservability
+        id="source"
+        connections={{ ...legacy, collectionState: "unavailable" }}
+        loading={false}
+        error={false}
+        agentSetupHref="/settings"
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText("Live status is unavailable")).toBeTruthy();
+  expect(screen.queryByText("No connected agents")).toBeNull();
 });

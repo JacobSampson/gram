@@ -6,7 +6,7 @@ diagnostics never disturb the session or user traffic.
 
 ```bash
 tunnel/compatibility/run.sh                       # full matrix + fault scenarios
-tunnel/compatibility/run.sh -- -soak 10s -faults ""   # quick matrix only
+mise exec -- tunnel/compatibility/run.sh -- -soak 10s -faults= -transitions= -nearfull-streams 0   # quick matrix only
 tunnel/compatibility/run.sh --no-image -- -agents old-src,new-src
 tunnel/compatibility/run.sh --old-ref <commit> --image <ref>
 tunnel/compatibility/run.sh --main-ref <commit> --main-image <ref>
@@ -18,15 +18,14 @@ window; pass `-- -connect-timeout 60s` if an image agent is still starting.
 The default run is sequential and takes about 40 minutes, mostly the 40s idle
 soak in each of the 24 pairs. For a bounded run, build once with
 `--build-only`, then start several `harness` processes against the same
-`bin/` directory, each with its own `-out` directory: one per gateway kind
+`bin/` directory, each with its own `-out` directory. Every invocation requires `-bin-dir <absolute-build-root>/bin -out <unique-output-dir> -image ghcr.io/speakeasy-api/gram-tunnel-agent:0.1.0 -main-image ghcr.io/speakeasy-api/gram-tunnel-agent:0.1.1` (or omit image agent kinds with `-agents old-src,main-src,new-src,new-src-nodiag`): one per gateway kind
 (`-gateways <kind> -soak 20s -faults= -transitions= -nearfull-streams 0`), one
 long soak (`-agents new-src -gateways new-src -soak 90s` with the same skips),
 and one for faults, near-full and rollbacks (`-agents= -gateways=`). Every pair
 uses its own ports, target and container name, so the processes do not share
-state; only CPU and Docker start-up are contended. A 20s soak still covers one
-diagnostics poll interval but gives less idle time to catch sporadic probes.
+state; only CPU and Docker start-up are contended. A 20s soak is shorter than one 30-second diagnostic interval; use the longer soak to verify idle polling.
 
-`COMPAT_WORKDIR` (default `$TMPDIR/gram-tunnel-compat`) holds the frozen source
+`COMPAT_WORKDIR` (default `$TMPDIR/gram-tunnel-compat`) contains a fresh `run.XXXXXXXX/` child for each invocation, holding frozen source
 snapshots, binaries and `runs/<timestamp>/` with `provenance.json`,
 `report.json` and per-pair process logs. The script exits non-zero if any
 check fails.
@@ -95,7 +94,7 @@ Agents: `old-src`, `old-image`, `main-src`, `main-image`, `new-src`,
 - Idle soak with one long-lived stream. Events arrive on time and the session
   stays single and stable. No HTTP reaches the target from diagnostics, and no
   TCP probes happen unless both sides negotiate diagnostics.
-- One agent session for the whole run. No disconnects, and no WARN/ERROR or
+- One agent session during steady state. No steady-state disconnects, WARN/ERROR or
   yamux `[ERR]` lines.
 - The tunnel key, forward token, request payload, upstream credential, and
   target userinfo/query/fragment never appear in logs or snapshots. Old agents
@@ -145,3 +144,14 @@ to stay out of snapshots and logs.
   `Stream.Close` signals `establishCh`, which cancels the open timer.
 - Linux runs the image with `--network host`. macOS uses
   `host.docker.internal`, which Docker Desktop forwards to host loopback.
+
+The driver requires literal loopback binds for public, forward and admin
+listeners. Plain HTTP/WS is confined to this local compatibility fixture; it
+cannot expose the unauthenticated `/state` endpoint on a network interface.
+The harness admin client bypasses proxies and bounds each request to two seconds.
+
+Frozen baseline commits must exist locally. For a shallow checkout, run
+`git fetch --unshallow origin` before building. The runner reports a missing
+revision explicitly. Relative `--work` paths are supported; existing contents
+are never deleted. Each invocation creates its own child and prints its paths.
+Near-full runs require a hold of at least 65 seconds and a positive tick interval.

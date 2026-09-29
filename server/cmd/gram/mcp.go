@@ -246,6 +246,7 @@ func runMCPServer(c *cli.Context, shutdown *mcpServerShutdown) error {
 	if err != nil {
 		return fmt.Errorf("create pubsub client: %w", err)
 	}
+	pubsubClientShutdown := len(shutdown.funcs)
 	shutdown.funcs = append(shutdown.funcs, stop)
 	publishers, stop, err := newPublishers(ctx, psbroker)
 	if err != nil {
@@ -309,8 +310,13 @@ func runMCPServer(c *cli.Context, shutdown *mcpServerShutdown) error {
 	if err != nil {
 		return err
 	}
+	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled"))
+	stopClient := shutdown.funcs[pubsubClientShutdown]
+	shutdown.funcs[pubsubClientShutdown] = func(ctx context.Context) error {
+		return errors.Join(stopTunnelMetrics(ctx), stopClient(ctx))
+	}
 	mcpService, err := newMCPService(c, mcpServiceDependencies{
-		TunnelMetrics: newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled")),
+		TunnelMetrics: tunnelCollector,
 		Logger:        logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
 		Sessions: sessionManager, ChatSessions: chatSessions, Environment: env,
 		Posthog: posthogClient, Features: featureFlags, ServerURL: serverURL, SiteURL: siteURL,

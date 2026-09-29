@@ -8,7 +8,7 @@
 package types
 
 type TunnelDiagnosticStep struct {
-	// pass, fail, not_applicable or not_tested
+	// Probe state
 	State string
 	// Elapsed probe time in milliseconds
 	DurationMs int64

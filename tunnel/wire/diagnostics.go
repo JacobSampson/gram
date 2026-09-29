@@ -2,6 +2,7 @@ package wire
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"slices"
@@ -114,4 +115,65 @@ func TargetDisplay(raw string) string {
 		return ""
 	}
 	return display
+}
+
+// DecodeDiagnostics requires the v1 fields while ignoring future additive fields.
+// Unknown data is discarded here, never persisted or logged.
+func DecodeDiagnostics(data []byte) (*DiagnosticsReport, error) {
+	required := []string{"version", "sequence", "sample_age_ms", "target_state", "consecutive_failures", "dns", "tcp", "tls", "requests_total", "transport_errors_total", "last_http_status", "last_http_response_age_ms", "last_transport_error", "last_transport_error_age_ms"}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return nil, errors.New("invalid diagnostic report")
+	}
+	present := func(values map[string]json.RawMessage, keys ...string) bool {
+		for _, key := range keys {
+			if len(values[key]) == 0 || string(values[key]) == "null" {
+				return false
+			}
+		}
+		return true
+	}
+	if !present(fields, required...) {
+		return nil, errors.New("incomplete diagnostic report")
+	}
+	for _, name := range []string{"dns", "tcp", "tls", "http_progress"} {
+		raw, exists := fields[name]
+		if name == "http_progress" && !exists {
+			continue
+		}
+		var nested map[string]json.RawMessage
+		if json.Unmarshal(raw, &nested) != nil {
+			return nil, errors.New("invalid diagnostic step")
+		}
+		keys := []string{"state", "duration_ms", "failure"}
+		if name == "http_progress" {
+			keys = []string{"waiting_headers", "open_responses"}
+		}
+		if !present(nested, keys...) {
+			return nil, errors.New("incomplete diagnostic step")
+		}
+	}
+	var report DiagnosticsReport
+	if json.Unmarshal(data, &report) != nil {
+		return nil, errors.New("invalid diagnostic report")
+	}
+	if err := report.Validate(); err != nil {
+		return nil, err
+	}
+	return &report, nil
+}
+
+// GatewayDisplay sanitizes WebSocket configuration before writing it to logs.
+func GatewayDisplay(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "ws" && u.Scheme != "wss") || u.Hostname() == "" {
+		return ""
+	}
+	scheme := u.Scheme
+	u.Scheme = "http"
+	display := TargetDisplay(u.String())
+	if display == "" {
+		return ""
+	}
+	return scheme + strings.TrimPrefix(display, "http")
 }

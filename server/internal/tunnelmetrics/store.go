@@ -50,7 +50,7 @@ func validSnapshot(m *tunnelv1.MetricsSnapshot) bool {
 		return false
 	}
 	// Bounds also keep aggregate sums within exact JSON integer range at the read limit.
-	for _, n := range append([]uint64{m.Attempts, m.Successes, m.Errors, m.Canceled, m.Incomplete, m.ConnectionsOpened}, m.LatencyBins...) {
+	for _, n := range append([]uint64{m.Attempts, m.Successes, m.Errors, m.Canceled, m.Incomplete, m.ConnectionsOpened, uint64(m.Consumers), uint64(m.Substreams)}, m.LatencyBins...) {
 		if n > 1_000_000_000 {
 			return false
 		}

@@ -143,7 +143,7 @@ type ListServerConnectionsResponseBody struct {
 // GetServerMetricsResponseBody is the type of the "tunneledMcp" service
 // "getServerMetrics" endpoint HTTP response body.
 type GetServerMetricsResponseBody struct {
-	// available, unavailable, too_large, or disabled
+	// History availability
 	State         string                           `form:"state" json:"state" xml:"state"`
 	ObservedAt    string                           `form:"observed_at" json:"observed_at" xml:"observed_at"`
 	LastSampleAt  *string                          `form:"last_sample_at,omitempty" json:"last_sample_at,omitempty" xml:"last_sample_at,omitempty"`
@@ -1777,14 +1777,13 @@ type TunneledMcpConnectionResponseBody struct {
 // TunnelDiagnosticsResponseBody is used to define fields on response body
 // types.
 type TunnelDiagnosticsResponseBody struct {
-	// pending, available, stale, unavailable, unsupported or disabled
+	// Diagnostic collection state
 	State string `form:"state" json:"state" xml:"state"`
 	// Gateway receipt time
 	ReceivedAt *string `form:"received_at,omitempty" json:"received_at,omitempty" xml:"received_at,omitempty"`
 	// Probe age at view time, -1 if never sampled
 	SampleAgeMs *int64 `form:"sample_age_ms,omitempty" json:"sample_age_ms,omitempty" xml:"sample_age_ms,omitempty"`
-	// pending, reachable, unreachable or unknown. Reachable means transport only,
-	// not MCP success.
+	// Reachable means transport only, not MCP success.
 	TargetState *string `form:"target_state,omitempty" json:"target_state,omitempty" xml:"target_state,omitempty"`
 	// Consecutive failed transport probes
 	ConsecutiveFailures *int64                            `form:"consecutive_failures,omitempty" json:"consecutive_failures,omitempty" xml:"consecutive_failures,omitempty"`
@@ -1810,7 +1809,7 @@ type TunnelDiagnosticsResponseBody struct {
 // TunnelDiagnosticStepResponseBody is used to define fields on response body
 // types.
 type TunnelDiagnosticStepResponseBody struct {
-	// pass, fail, not_applicable or not_tested
+	// Probe state
 	State string `form:"state" json:"state" xml:"state"`
 	// Elapsed probe time in milliseconds
 	DurationMs int64 `form:"duration_ms" json:"duration_ms" xml:"duration_ms"`

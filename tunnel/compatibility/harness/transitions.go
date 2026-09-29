@@ -110,6 +110,9 @@ func (t *transitionEnv) stage(ctx context.Context, label string, gw *gatewayProc
 				diag.State = d.State
 			}
 		}
+		if latest, err := gw.state(ctx); err == nil && len(latest.connections()) == 1 {
+			t.res.Facts[label+"_diagnostics"] = json.RawMessage(latest.connections()[0]["diagnostics"])
+		}
 		t.add(label+"_diagnostics_available", diag.State == "available", "state=%q", diag.State)
 	default:
 		t.add(label+"_diagnostics_unsupported", hasDiag && diag.State == "unsupported" && len(diag.Report) == 0 && !hasDisplay,

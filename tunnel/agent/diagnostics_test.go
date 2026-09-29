@@ -2,11 +2,13 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +44,9 @@ func TestPassiveUnauthorizedIsAResponseNotATransportError(t *testing.T) {
 	require.Zero(t, report.TransportErrorsTotal)
 	require.EqualValues(t, 1, report.RequestsTotal)
 	require.Equal(t, "pending", report.TargetState)
+	encoded, err := json.Marshal(report)
+	require.NoError(t, err)
+	require.NotContains(t, string(encoded), "PRIVATE_PAYLOAD_SENTINEL")
 }
 func TestProbeRejectsUntrustedTLS(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
@@ -67,4 +72,24 @@ func TestConsumerCancellationDoesNotBlameTargetTransport(t *testing.T) {
 	_, err = transport.RoundTrip(req)
 	require.ErrorIs(t, err, context.Canceled)
 	require.Zero(t, d.snapshot().TransportErrorsTotal)
+}
+
+func TestConsumerDeadlineDoesNotBlameTargetTransport(t *testing.T) {
+	d := newDiagnostics()
+	transport := observedTransport{base: http.DefaultTransport, diagnostics: d}
+	ctx, cancel := context.WithDeadline(t.Context(), time.Now().Add(-time.Second))
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://127.0.0.1:1/mcp", nil)
+	require.NoError(t, err)
+	_, err = transport.RoundTrip(req)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Zero(t, d.snapshot().TransportErrorsTotal)
+}
+
+func TestProbeUnsupportedSchemeIsUnknown(t *testing.T) {
+	target, err := url.Parse("ftp://127.0.0.1:21/mcp")
+	require.NoError(t, err)
+	state, _, tcp, _ := probeTarget(t.Context(), target)
+	require.Equal(t, "unknown", state)
+	require.Equal(t, "not_tested", tcp.State)
 }

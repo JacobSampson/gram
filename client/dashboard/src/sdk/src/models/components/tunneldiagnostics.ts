@@ -5,6 +5,7 @@
 import * as z from "zod/v4-mini";
 import { remap as remap$ } from "../../lib/primitives.js";
 import { safeParse } from "../../lib/schemas.js";
+import { ClosedEnum } from "../../types/enums.js";
 import { Result as SafeParseResult } from "../../types/fp.js";
 import { SDKValidationError } from "../errors/sdkvalidationerror.js";
 import {
@@ -15,6 +16,38 @@ import {
   TunnelHTTPProgress,
   TunnelHTTPProgress$inboundSchema,
 } from "./tunnelhttpprogress.js";
+
+/**
+ * Diagnostic collection state
+ */
+export const TunnelDiagnosticsState = {
+  Pending: "pending",
+  Available: "available",
+  Stale: "stale",
+  Unavailable: "unavailable",
+  Unsupported: "unsupported",
+  Disabled: "disabled",
+} as const;
+/**
+ * Diagnostic collection state
+ */
+export type TunnelDiagnosticsState = ClosedEnum<typeof TunnelDiagnosticsState>;
+
+/**
+ * Reachable means transport only, not MCP success.
+ */
+export const TunnelDiagnosticsTargetState = {
+  Pending: "pending",
+  Reachable: "reachable",
+  Unreachable: "unreachable",
+  Unknown: "unknown",
+} as const;
+/**
+ * Reachable means transport only, not MCP success.
+ */
+export type TunnelDiagnosticsTargetState = ClosedEnum<
+  typeof TunnelDiagnosticsTargetState
+>;
 
 export type TunnelDiagnostics = {
   /**
@@ -52,13 +85,13 @@ export type TunnelDiagnostics = {
    */
   sampleAgeMs?: number | undefined;
   /**
-   * pending, available, stale, unavailable, unsupported or disabled
+   * Diagnostic collection state
    */
-  state: string;
+  state: TunnelDiagnosticsState;
   /**
-   * pending, reachable, unreachable or unknown. Reachable means transport only, not MCP success.
+   * Reachable means transport only, not MCP success.
    */
-  targetState?: string | undefined;
+  targetState?: TunnelDiagnosticsTargetState | undefined;
   tcp?: TunnelDiagnosticStep | undefined;
   tls?: TunnelDiagnosticStep | undefined;
   /**
@@ -66,6 +99,16 @@ export type TunnelDiagnostics = {
    */
   transportErrorsTotal?: number | undefined;
 };
+
+/** @internal */
+export const TunnelDiagnosticsState$inboundSchema: z.ZodMiniEnum<
+  typeof TunnelDiagnosticsState
+> = z.enum(TunnelDiagnosticsState);
+
+/** @internal */
+export const TunnelDiagnosticsTargetState$inboundSchema: z.ZodMiniEnum<
+  typeof TunnelDiagnosticsTargetState
+> = z.enum(TunnelDiagnosticsTargetState);
 
 /** @internal */
 export const TunnelDiagnostics$inboundSchema: z.ZodMiniType<
@@ -85,8 +128,8 @@ export const TunnelDiagnostics$inboundSchema: z.ZodMiniType<
     ),
     requests_total: z.optional(z.int()),
     sample_age_ms: z.optional(z.int()),
-    state: z.string(),
-    target_state: z.optional(z.string()),
+    state: TunnelDiagnosticsState$inboundSchema,
+    target_state: z.optional(TunnelDiagnosticsTargetState$inboundSchema),
     tcp: z.optional(TunnelDiagnosticStep$inboundSchema),
     tls: z.optional(TunnelDiagnosticStep$inboundSchema),
     transport_errors_total: z.optional(z.int()),

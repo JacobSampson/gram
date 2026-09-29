@@ -101,15 +101,16 @@ permission, or distributed skill is changed by this release.
 
 Deploy schema and generated Pub/Sub topology/IAM first, then the consumer, API and gateway. Enable producers only after verifying ingestion. The independent switches default off:
 
-| Switch                                   | Process                | Enables                           |
-| ---------------------------------------- | ---------------------- | --------------------------------- |
-| `GRAM_TUNNEL_METRICS_CONSUMER_ENABLED=1` | `gram streams`         | Metrics batch consumer            |
-| `GRAM_TUNNEL_METRICS_ENABLED=1`          | Gram server            | Request recording and history API |
-| `TUNNEL_METRICS_ENABLED=1`               | Tunnel gateway         | Connection history publication    |
-| `TUNNEL_DIAGNOSTICS_ENABLED=1`           | Tunnel gateway         | Polling capable agents            |
-| `gram-tunnel-observability`              | Dashboard feature flag | New Overview                      |
+| Switch                                   | Process                | Enables                                 |
+| ---------------------------------------- | ---------------------- | --------------------------------------- |
+| `GRAM_TUNNEL_METRICS_CONSUMER_ENABLED=1` | `gram streams`         | Metrics batch consumer                  |
+| `GRAM_TUNNEL_METRICS_ENABLED=1`          | Gram server            | Request recording                       |
+| `GRAM_TUNNEL_METRICS_HISTORY_ENABLED=1`  | Gram server            | History reads, independent of recording |
+| `TUNNEL_METRICS_ENABLED=1`               | Tunnel gateway         | Connection history publication          |
+| `TUNNEL_DIAGNOSTICS_ENABLED=1`           | Tunnel gateway         | Polling capable agents                  |
+| `gram-tunnel-observability`              | Dashboard feature flag | New Overview                            |
 
-The server flags are `--tunnel-metrics-enabled` and `--tunnel-metrics-consumer-enabled`, backed by the environment switches above. Both default off.
+The server flags are `--tunnel-metrics-enabled`, `--tunnel-metrics-history-enabled` and `--tunnel-metrics-consumer-enabled`, backed by the environment switches above. All default off.
 
 Gateway publication also requires `GRAM_GCP_PROJECT_ID` and service IAM to publish the declared metrics topic. Local development uses `PUBSUB_EMULATOR_HOST`.
 
@@ -158,3 +159,9 @@ the assistant, enters chat, uses a page-owned chat surface, or queues a prompt.
 This fixes pre-existing eager initialization from the global assistant; the
 assistant's user-triggered discovery remains normal traffic, separate from health
 checks. Existing Tool I/O logging remains the place for request/response data.
+
+Request coverage source leases expire after ten minutes without traffic, freeing
+space for source churn. After that interval an idle source is unknown, not a
+fabricated zero. Producer loss remains a conservative watermark since boot:
+partial coverage does not claim that a later successful flush recovered missing
+history. Successfully published revisions are never counted as lost on expiry.

@@ -51,6 +51,7 @@ func observeResponse(ctx context.Context, msg jsonrpc.Message) {
 			IsError bool `json:"isError"`
 		}
 		if json.Unmarshal(response.Result, &result) != nil {
+			o.finish("error")
 			return
 		}
 		if result.IsError {

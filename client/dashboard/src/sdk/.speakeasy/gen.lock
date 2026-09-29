@@ -7576,7 +7576,7 @@ examples:
           window: "day"
       responses:
         "200":
-          application/json: {"active_servers": 633723, "bucket_seconds": 5222, "clients": [], "observed_at": "2026-09-14T17:56:20.787Z", "points": [], "state": "Louisiana"}
+          application/json: {"active_servers": 633723, "bucket_seconds": 5222, "clients": [], "observed_at": "2026-09-14T17:56:20.787Z", "points": [], "state": "unavailable"}
         "400":
           application/json: {"fault": false, "id": "123abc", "message": "parameter 'p' must be an integer", "name": "bad_request", "temporary": false, "timeout": false}
         "500":

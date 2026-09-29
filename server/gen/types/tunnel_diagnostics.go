@@ -8,14 +8,13 @@
 package types
 
 type TunnelDiagnostics struct {
-	// pending, available, stale, unavailable, unsupported or disabled
+	// Diagnostic collection state
 	State string
 	// Gateway receipt time
 	ReceivedAt *string
 	// Probe age at view time, -1 if never sampled
 	SampleAgeMs *int64
-	// pending, reachable, unreachable or unknown. Reachable means transport only,
-	// not MCP success.
+	// Reachable means transport only, not MCP success.
 	TargetState *string
 	// Consecutive failed transport probes
 	ConsecutiveFailures *int64

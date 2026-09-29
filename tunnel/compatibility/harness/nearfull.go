@@ -171,7 +171,10 @@ func runNearFull(o options, as agentSpec, gs gatewaySpec) pairResult {
 	var during diagTimes
 	var pollsDuring []time.Time
 	for time.Now().Before(pressureAt.Add(o.nearFullHold - 5*time.Second)) {
-		if d, _, err := gw.diagnostics(ctx); err == nil {
+		if d, active, err := gw.diagnostics(ctx); err == nil {
+			if active < n {
+				break
+			}
 			during = d
 			if d.AttemptedAt.After(pressureAt) && !slices.Contains(pollsDuring, d.AttemptedAt) {
 				pollsDuring = append(pollsDuring, d.AttemptedAt)
@@ -180,7 +183,7 @@ func runNearFull(o options, as agentSpec, gs gatewaySpec) pairResult {
 		time.Sleep(500 * time.Millisecond)
 	}
 	res.Facts["diagnostics_during_pressure"] = during
-	add("nearfull_polls_paused", len(pollsDuring) == 0, "polls started under pressure: %v (window %s)", pollsDuring, time.Since(pressureAt).Round(time.Second))
+	add("nearfull_polls_paused", len(pollsDuring) == 0 && time.Since(pressureAt) >= 32*time.Second, "polls started under pressure: %v (window %s)", pollsDuring, time.Since(pressureAt).Round(time.Second))
 
 	wg.Wait()
 	close(errs)

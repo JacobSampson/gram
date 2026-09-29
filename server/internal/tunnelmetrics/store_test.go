@@ -39,9 +39,6 @@ func TestDuplicateAndOlderSnapshotsDoNotInflateCounts(t *testing.T) {
 	require.EqualValues(t, 11, rows[0].Successes)
 	require.EqualValues(t, 1, rows[0].Errors)
 	require.Equal(t, []uint64{0, 0, 5, 7, 0, 0, 0, 0, 0, 0, 0, 0}, rows[0].Bins)
-	isolated, err := store.Read(t.Context(), project, uuid.New(), bucket)
-	require.NoError(t, err)
-	require.Empty(t, isolated)
 	row.ClientFamily = "PRIVATE_USER_AGENT_SENTINEL"
 	require.False(t, validSnapshot(row))
 }
@@ -73,7 +70,13 @@ func TestIngestUsesAuthoritativeOwnersAndRetriesLookupFailure(t *testing.T) {
 			}
 		}
 	}
-	// Unknown/deleted source IDs omitted by the authoritative query never land.
+	// Unknown/deleted source IDs omitted by the authoritative query never land,
+	// even under a zero project ID rather than merely hidden by tenant filters.
+	for _, source := range sources[2:] {
+		rows, err := store.Read(t.Context(), uuid.Nil, source, bucket)
+		require.NoError(t, err)
+		require.Empty(t, rows)
+	}
 	sentinel := errors.New("ownership database unavailable")
 	store = NewWriter(conn, func(context.Context, []uuid.UUID) ([]tunnelrepo.ListMetricSourceOwnersRow, error) {
 		return nil, sentinel

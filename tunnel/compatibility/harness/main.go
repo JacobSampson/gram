@@ -111,6 +111,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "-bin-dir and -out are required")
 		os.Exit(2)
 	}
+	if o.tick <= 0 || (o.nearFullStreams > 0 && o.nearFullHold < 65*time.Second) {
+		fmt.Fprintln(os.Stderr, "-tick must be positive; enabled -nearfull-hold must be at least 65s")
+		os.Exit(2)
+	}
 	o.agents = splitList(agents)
 	o.gateways = splitList(gateways)
 	o.newGatewayEnv = splitList(newGatewayEnv)
@@ -141,16 +145,28 @@ func main() {
 		"main-src":       {Kind: "main-src", Bin: filepath.Join(o.binDir, "main", "tunnel-agent"), Old: true, PreservesPath: true},
 		"main-image":     {Kind: "main-image", Image: o.mainImage, Old: true, PreservesPath: true},
 		"new-src":        {Kind: "new-src", Bin: filepath.Join(o.binDir, "new", "tunnel-agent"), Env: o.newAgentEnv, Diagnostics: true, PreservesPath: true},
-		"new-src-nodiag": {Kind: "new-src-nodiag", Bin: filepath.Join(o.binDir, "new", "tunnel-agent"), Env: append(append([]string(nil), o.newAgentEnv...), "TUNNEL_DISABLE_DIAGNOSTICS=1"), PreservesPath: true},
+		"new-src-nodiag": {Kind: "new-src-nodiag", Bin: filepath.Join(o.binDir, "new", "tunnel-agent"), Env: overrideEnv(o.newAgentEnv, "TUNNEL_DISABLE_DIAGNOSTICS", "1"), PreservesPath: true},
 	}
 	gatewaySpecs := map[string]gatewaySpec{
 		"old-src":  {Kind: "old-src", Bin: filepath.Join(o.binDir, "old", "testgateway"), Old: true},
 		"main-src": {Kind: "main-src", Bin: filepath.Join(o.binDir, "main", "testgateway"), Old: true},
 		"new-src":  {Kind: "new-src", Bin: filepath.Join(o.binDir, "new", "testgateway"), Env: o.newGatewayEnv},
 		// Same binary with collection switched off; the later assignment wins.
-		"new-src-nodiag": {Kind: "new-src-nodiag", Bin: filepath.Join(o.binDir, "new", "testgateway"), Env: append(append([]string(nil), o.newGatewayEnv...), "TUNNEL_DIAGNOSTICS_ENABLED=0")},
+		"new-src-nodiag": {Kind: "new-src-nodiag", Bin: filepath.Join(o.binDir, "new", "testgateway"), Env: overrideEnv(o.newGatewayEnv, "TUNNEL_DIAGNOSTICS_ENABLED", "0")},
 	}
 
+	for _, kind := range o.agents {
+		if _, ok := agentSpecs[kind]; !ok {
+			fmt.Fprintf(os.Stderr, "unknown agent kind %q\n", kind)
+			os.Exit(2)
+		}
+	}
+	for _, kind := range o.gateways {
+		if _, ok := gatewaySpecs[kind]; !ok {
+			fmt.Fprintf(os.Stderr, "unknown gateway kind %q\n", kind)
+			os.Exit(2)
+		}
+	}
 	if err := os.MkdirAll(o.outDir, 0o755); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -165,9 +181,13 @@ func main() {
 		Pass: true,
 	}
 	if o.provenancePath != "" {
-		if raw, err := os.ReadFile(o.provenancePath); err == nil && json.Valid(raw) {
-			rep.Provenance = raw
+		raw, err := os.ReadFile(o.provenancePath)
+		var provenance map[string]json.RawMessage
+		if err != nil || json.Unmarshal(raw, &provenance) != nil || len(provenance) == 0 {
+			fmt.Fprintln(os.Stderr, "provenance must be a readable nonempty JSON object")
+			os.Exit(2)
 		}
+		rep.Provenance = raw
 	}
 
 	for _, gk := range o.gateways {
@@ -410,4 +430,15 @@ type pairSecrets struct {
 	sentinel     string
 	upstreamAuth string
 	target       targetDecoration
+}
+
+// overrideEnv gives scenario switches precedence without duplicate environment keys.
+func overrideEnv(env []string, key, value string) []string {
+	out := make([]string, 0, len(env)+1)
+	for _, entry := range env {
+		if !strings.HasPrefix(entry, key+"=") {
+			out = append(out, entry)
+		}
+	}
+	return append(out, key+"="+value)
 }

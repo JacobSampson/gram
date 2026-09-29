@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from gcp.pubsub.v1 import options_pb2 as gcp_dot_pubsub_dot_v1_dot_options__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&gram/tunnel/v1/metrics_ch_writer.proto\x12\x0egram.tunnel.v1\x1a\x1bgcp/pubsub/v1/options.proto\"J\n\x0fMetricsCHWriter:7\x92\xb5\x18\x33\"\x02\x08\x1e\x32\t\n\x02\x08\n\x12\x03\x08\xd8\x04J\x02\x10\x05R\x1egram.tunnel.v1.MetricsSnapshotBAZ?github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&gram/tunnel/v1/metrics_ch_writer.proto\x12\x0egram.tunnel.v1\x1a\x1bgcp/pubsub/v1/options.proto\"R\n\x0fMetricsCHWriter:?\x92\xb5\x18;\x12\x04\x08\x80\xf5$\x18\x00\"\x02\x08<2\t\n\x02\x08\n\x12\x03\x08\xd8\x04J\x02\x10\nR\x1egram.tunnel.v1.MetricsSnapshotBAZ?github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1b\x08\x65\x64itionsp\xe9\x07')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,7 +34,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z?github.com/speakeasy-api/gram/infra/gen/gram/tunnel/v1;tunnelv1'
   _globals['_METRICSCHWRITER']._loaded_options = None
-  _globals['_METRICSCHWRITER']._serialized_options = b'\222\265\0303\"\002\010\0362\t\n\002\010\n\022\003\010\330\004J\002\020\005R\036gram.tunnel.v1.MetricsSnapshot'
+  _globals['_METRICSCHWRITER']._serialized_options = b'\222\265\030;\022\004\010\200\365$\030\000\"\002\010<2\t\n\002\010\n\022\003\010\330\004J\002\020\nR\036gram.tunnel.v1.MetricsSnapshot'
   _globals['_METRICSCHWRITER']._serialized_start=87
-  _globals['_METRICSCHWRITER']._serialized_end=161
+  _globals['_METRICSCHWRITER']._serialized_end=169
 # @@protoc_insertion_point(module_scope)

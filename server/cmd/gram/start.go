@@ -326,7 +326,8 @@ const probeDrainTimeout = 20 * time.Second
 
 func mcpRuntimeFlags() []cli.Flag {
 	flags := []cli.Flag{
-		&cli.BoolFlag{Name: "tunnel-metrics-enabled", Usage: "Collect aggregate tunnel request metrics and serve tunnel activity history", EnvVars: []string{"GRAM_TUNNEL_METRICS_ENABLED"}},
+		&cli.BoolFlag{Name: "tunnel-metrics-history-enabled", Usage: "Serve stored tunnel activity history", EnvVars: []string{"GRAM_TUNNEL_METRICS_HISTORY_ENABLED"}},
+		&cli.BoolFlag{Name: "tunnel-metrics-enabled", Usage: "Collect aggregate tunnel request metrics", EnvVars: []string{"GRAM_TUNNEL_METRICS_ENABLED"}},
 		pluginPublicationEmitFlag(),
 		&cli.StringSliceFlag{
 			Name:    "platform-hosts",
@@ -899,6 +900,7 @@ func newStartCommand() *cli.Command {
 				telemetryLoggerShutdown func(context.Context) error
 				publishersShutdown      func(context.Context) error
 				pubsubShutdown          func(context.Context) error
+				tunnelMetricsShutdown   func(context.Context) error
 				enforcementDispatcher   *enforcereply.Dispatcher
 				enforcementInbox        *enforcereply.Inbox
 			)
@@ -927,6 +929,9 @@ func newStartCommand() *cli.Command {
 				}
 				if enforcementInbox != nil {
 					errs = append(errs, enforcementInbox.Close())
+				}
+				if tunnelMetricsShutdown != nil {
+					errs = append(errs, tunnelMetricsShutdown(ctx))
 				}
 				if publishersShutdown != nil {
 					errs = append(errs, publishersShutdown(ctx))
@@ -1164,8 +1169,10 @@ func newStartCommand() *cli.Command {
 				publishers.RiskFindings,
 				mcpriskscan.DefaultPolicyConfig,
 			)
+			tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled"))
+			tunnelMetricsShutdown = stopTunnelMetrics
 			mcpService, err := newMCPService(c, mcpServiceDependencies{
-				TunnelMetrics: newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled")),
+				TunnelMetrics: tunnelCollector,
 				Logger:        logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
 				Sessions: sessionManager, ChatSessions: chatSessionsManager, Environment: env,
 				Posthog: posthogClient, Features: featureFlags, ServerURL: serverURL, SiteURL: siteURL,
@@ -1695,7 +1702,7 @@ func newStartCommand() *cli.Command {
 			unproxiedmcp.Attach(mux, unproxiedmcp.NewService(logger, tracerProvider, db, sessionManager, authzEngine, guardianPolicy, auditLogger))
 			tunnelService := tunneledmcp.NewService(logger, tracerProvider, db, sessionManager, authzEngine, auditLogger, route.NewRedis(redisClient), redisClient)
 			tunnelService.Metrics = tunnelmetrics.NewStore(chDB)
-			tunnelService.MetricsEnabled = c.Bool("tunnel-metrics-enabled")
+			tunnelService.MetricsEnabled = c.Bool("tunnel-metrics-history-enabled")
 			tunneledmcp.Attach(mux, tunnelService)
 			mcpRuntime, err := buildMCPServerRuntime(mcpServerRuntimeDependencies{
 				Logger:     logger,

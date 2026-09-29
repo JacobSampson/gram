@@ -77,3 +77,43 @@ func TestTunnelObservationPolicyRejectionIsTerminal(t *testing.T) {
 	require.NoError(t, p.Post(httptest.NewRecorder(), req))
 	require.Equal(t, []string{"attempt", "error"}, outcomes)
 }
+
+func TestTunnelObservationTerminalErrors(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, body string
+		status     int
+	}{
+		{"rpc_error", `{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"PRIVATE_ERROR"}}`, 200},
+		{"malformed_result", `{"jsonrpc":"2.0","id":1,"result":"not an object"}`, 200},
+		{"redirect", `{"jsonrpc":"2.0","id":1,"result":{"content":[]}}`, 302},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer upstream.Close()
+			p := newProxyForTest(t, upstream.URL)
+			var outcomes []string
+			p.RequestObserver = func(_, _, outcome string, _ time.Duration) { outcomes = append(outcomes, outcome) }
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"fixture","arguments":{}}}`))
+			_ = p.Post(httptest.NewRecorder(), req)
+			require.Equal(t, []string{"attempt", "error"}, outcomes)
+		})
+	}
+}
+
+func TestTunnelObservationIdleStreamIsIncomplete(t *testing.T) {
+	t.Parallel()
+	upstream := newStallingSSEUpstream(t)
+	p := newProxyForTest(t, upstream.URL)
+	p.StreamingTimeout = 50 * time.Millisecond
+	var outcomes []string
+	p.RequestObserver = func(_, _, outcome string, _ time.Duration) { outcomes = append(outcomes, outcome) }
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`))
+	require.Error(t, p.Post(httptest.NewRecorder(), req))
+	require.Equal(t, []string{"attempt", "incomplete"}, outcomes)
+}

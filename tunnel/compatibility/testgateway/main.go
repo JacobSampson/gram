@@ -48,6 +48,14 @@ func main() {
 	logLevel := flag.String("log-level", "debug", "slog level: debug, info, warn, error")
 	flag.Parse()
 
+	// This test driver intentionally uses cleartext only on literal loopback.
+	for _, address := range []string{*publicAddr, *forwardAddr, *adminAddr} {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil || !net.ParseIP(host).IsLoopback() {
+			fmt.Fprintln(os.Stderr, "compatibility listeners must bind a literal loopback address")
+			os.Exit(2)
+		}
+	}
 	var level slog.Level
 	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
 		fmt.Fprintf(os.Stderr, "invalid -log-level: %v\n", err)

@@ -32,13 +32,15 @@ type Collector struct {
 	mu           sync.Mutex
 	producerID   string
 	series       map[Key]Snapshot
-	sources      map[string]struct{}
+	published    map[Key]uint64
+	sources      map[string]time.Time
+	now          func() time.Time
 	gaugeSources map[string]time.Time
 	dropped      atomic.Uint64
 }
 
 func New() *Collector {
-	return &Collector{producerID: uuid.NewString(), series: make(map[Key]Snapshot), sources: make(map[string]struct{}), gaugeSources: make(map[string]time.Time)}
+	return &Collector{producerID: uuid.NewString(), series: make(map[Key]Snapshot), published: make(map[Key]uint64), sources: make(map[string]time.Time), now: time.Now, gaugeSources: make(map[string]time.Time)}
 }
 func (c *Collector) Dropped() uint64 { return c.dropped.Load() }
 func Method(value string) string {
@@ -73,11 +75,11 @@ func (c *Collector) Observe(source, server, method, client, outcome string, dura
 	if c == nil || source == "" {
 		return
 	}
-	key := Key{SourceID: source, ServerID: server, Kind: "requests", Method: Method(method), ClientFamily: boundedFamily(client), Bucket: time.Now().UTC().Truncate(time.Minute).Unix()}
+	key := Key{SourceID: source, ServerID: server, Kind: "requests", Method: Method(method), ClientFamily: boundedFamily(client), Bucket: c.now().UTC().Truncate(time.Minute).Unix()}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if len(c.sources) < 10000 {
-		c.sources[source] = struct{}{}
+	if _, exists := c.sources[source]; exists || len(c.sources) < 10000 {
+		c.sources[source] = c.now()
 	}
 	row, ok := c.series[key]
 	if !ok && len(c.series) >= MaxSeries-10000 {
@@ -112,7 +114,7 @@ func (c *Collector) Connections(source string, connections, consumers, substream
 	if c == nil {
 		return
 	}
-	key := Key{SourceID: source, Kind: "connections", Bucket: time.Now().UTC().Truncate(15 * time.Second).Unix()}
+	key := Key{SourceID: source, Kind: "connections", Bucket: c.now().UTC().Truncate(15 * time.Second).Unix()}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if connections > 0 && len(c.gaugeSources) < 10000 {
@@ -149,11 +151,16 @@ func (c *Collector) Run(ctx context.Context, publish func(context.Context, Snaps
 	}
 }
 func (c *Collector) Flush(ctx context.Context, publish func(context.Context, Snapshot) error) {
-	now := time.Now().UTC()
+	now := c.now().UTC()
 	c.mu.Lock()
 	// Heartbeats prove this producer is still collecting sources it has observed.
 	// They do not prove that every replica is healthy. Reserve space for them.
-	for source := range c.sources {
+	for source, lastObserved := range c.sources {
+		// Idle sources expire so churn cannot permanently fill this bounded set.
+		if now.Sub(lastObserved) > 10*time.Minute {
+			delete(c.sources, source)
+			continue
+		}
 		key := Key{SourceID: source, Kind: "coverage", Bucket: now.Truncate(time.Minute).Unix()}
 		row, exists := c.series[key]
 		if !exists && len(c.series) >= MaxSeries {
@@ -169,8 +176,11 @@ func (c *Collector) Flush(ctx context.Context, publish func(context.Context, Sna
 	batch := make([]Snapshot, 0, len(c.series))
 	for key, row := range c.series {
 		if now.Unix()-key.Bucket > 600 {
+			if c.published[key] < row.Revision {
+				c.dropped.Add(1)
+			}
 			delete(c.series, key)
-			c.dropped.Add(1)
+			delete(c.published, key)
 			continue
 		}
 		batch = append(batch, row)
@@ -188,12 +198,16 @@ func (c *Collector) Flush(ctx context.Context, publish func(context.Context, Sna
 				publishCtx, cancel := context.WithTimeout(flushCtx, 2*time.Second)
 				err := publish(publishCtx, row)
 				cancel()
-				if err != nil || now.Unix()-row.Bucket < 75 {
+				if err != nil {
 					continue
 				}
 				c.mu.Lock()
-				if latest, ok := c.series[row.Key]; ok && latest.Revision == row.Revision {
-					delete(c.series, row.Key)
+				if latest, ok := c.series[row.Key]; ok {
+					c.published[row.Key] = max(c.published[row.Key], row.Revision)
+					if latest.Revision == row.Revision && now.Unix()-row.Bucket >= 75 {
+						delete(c.series, row.Key)
+						delete(c.published, row.Key)
+					}
 				}
 				c.mu.Unlock()
 			}

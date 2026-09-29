@@ -46,7 +46,7 @@ func (g *Gateway) recordMetrics(source string, opened uint64) {
 		d := conn.Diagnostics
 		if d != nil && d.State == "available" && d.Report != nil && now.Sub(d.ReceivedAt) <= wire.DiagnosticsFreshness && d.Report.SampleAgeMillis >= 0 && now.Sub(d.ReceivedAt)+time.Duration(d.Report.SampleAgeMillis)*time.Millisecond <= wire.DiagnosticsFreshness {
 			available++
-			if d.Report.TargetState == "unreachable" {
+			if d.Report.TargetState == "unreachable" && d.Report.ConsecutiveFailures >= 2 {
 				unreachable++
 			}
 		}

@@ -5,6 +5,7 @@
 import * as z from "zod/v4-mini";
 import { remap as remap$ } from "../../lib/primitives.js";
 import { safeParse } from "../../lib/schemas.js";
+import { ClosedEnum } from "../../types/enums.js";
 import { Result as SafeParseResult } from "../../types/fp.js";
 import { SDKValidationError } from "../errors/sdkvalidationerror.js";
 import {
@@ -15,6 +16,20 @@ import {
   TunnelMetricPoint,
   TunnelMetricPoint$inboundSchema,
 } from "./tunnelmetricpoint.js";
+
+/**
+ * History availability
+ */
+export const TunnelMetricsState = {
+  Available: "available",
+  Unavailable: "unavailable",
+  TooLarge: "too_large",
+  Disabled: "disabled",
+} as const;
+/**
+ * History availability
+ */
+export type TunnelMetricsState = ClosedEnum<typeof TunnelMetricsState>;
 
 export type TunnelMetrics = {
   /**
@@ -27,10 +42,15 @@ export type TunnelMetrics = {
   observedAt: Date;
   points: Array<TunnelMetricPoint>;
   /**
-   * available, unavailable, too_large, or disabled
+   * History availability
    */
-  state: string;
+  state: TunnelMetricsState;
 };
+
+/** @internal */
+export const TunnelMetricsState$inboundSchema: z.ZodMiniEnum<
+  typeof TunnelMetricsState
+> = z.enum(TunnelMetricsState);
 
 /** @internal */
 export const TunnelMetrics$inboundSchema: z.ZodMiniType<
@@ -49,7 +69,7 @@ export const TunnelMetrics$inboundSchema: z.ZodMiniType<
       z.transform(v => new Date(v)),
     ),
     points: z.array(TunnelMetricPoint$inboundSchema),
-    state: z.string(),
+    state: TunnelMetricsState$inboundSchema,
   }),
   z.transform((v) => {
     return remap$(v, {

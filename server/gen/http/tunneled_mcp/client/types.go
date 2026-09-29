@@ -143,7 +143,7 @@ type ListServerConnectionsResponseBody struct {
 // GetServerMetricsResponseBody is the type of the "tunneledMcp" service
 // "getServerMetrics" endpoint HTTP response body.
 type GetServerMetricsResponseBody struct {
-	// available, unavailable, too_large, or disabled
+	// History availability
 	State         *string                          `form:"state,omitempty" json:"state,omitempty" xml:"state,omitempty"`
 	ObservedAt    *string                          `form:"observed_at,omitempty" json:"observed_at,omitempty" xml:"observed_at,omitempty"`
 	LastSampleAt  *string                          `form:"last_sample_at,omitempty" json:"last_sample_at,omitempty" xml:"last_sample_at,omitempty"`
@@ -1777,14 +1777,13 @@ type TunneledMcpConnectionResponseBody struct {
 // TunnelDiagnosticsResponseBody is used to define fields on response body
 // types.
 type TunnelDiagnosticsResponseBody struct {
-	// pending, available, stale, unavailable, unsupported or disabled
+	// Diagnostic collection state
 	State *string `form:"state,omitempty" json:"state,omitempty" xml:"state,omitempty"`
 	// Gateway receipt time
 	ReceivedAt *string `form:"received_at,omitempty" json:"received_at,omitempty" xml:"received_at,omitempty"`
 	// Probe age at view time, -1 if never sampled
 	SampleAgeMs *int64 `form:"sample_age_ms,omitempty" json:"sample_age_ms,omitempty" xml:"sample_age_ms,omitempty"`
-	// pending, reachable, unreachable or unknown. Reachable means transport only,
-	// not MCP success.
+	// Reachable means transport only, not MCP success.
 	TargetState *string `form:"target_state,omitempty" json:"target_state,omitempty" xml:"target_state,omitempty"`
 	// Consecutive failed transport probes
 	ConsecutiveFailures *int64                            `form:"consecutive_failures,omitempty" json:"consecutive_failures,omitempty" xml:"consecutive_failures,omitempty"`
@@ -1810,7 +1809,7 @@ type TunnelDiagnosticsResponseBody struct {
 // TunnelDiagnosticStepResponseBody is used to define fields on response body
 // types.
 type TunnelDiagnosticStepResponseBody struct {
-	// pass, fail, not_applicable or not_tested
+	// Probe state
 	State *string `form:"state,omitempty" json:"state,omitempty" xml:"state,omitempty"`
 	// Elapsed probe time in milliseconds
 	DurationMs *int64 `form:"duration_ms,omitempty" json:"duration_ms,omitempty" xml:"duration_ms,omitempty"`
@@ -3395,6 +3394,11 @@ func ValidateGetServerMetricsResponseBody(body *GetServerMetricsResponseBody) (e
 	}
 	if body.ActiveServers == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("active_servers", "body"))
+	}
+	if body.State != nil {
+		if !(*body.State == "available" || *body.State == "unavailable" || *body.State == "too_large" || *body.State == "disabled") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.state", *body.State, []any{"available", "unavailable", "too_large", "disabled"}))
+		}
 	}
 	if body.ObservedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.observed_at", *body.ObservedAt, goa.FormatDateTime))
@@ -5541,8 +5545,18 @@ func ValidateTunnelDiagnosticsResponseBody(body *TunnelDiagnosticsResponseBody) 
 	if body.State == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("state", "body"))
 	}
+	if body.State != nil {
+		if !(*body.State == "pending" || *body.State == "available" || *body.State == "stale" || *body.State == "unavailable" || *body.State == "unsupported" || *body.State == "disabled") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.state", *body.State, []any{"pending", "available", "stale", "unavailable", "unsupported", "disabled"}))
+		}
+	}
 	if body.ReceivedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.received_at", *body.ReceivedAt, goa.FormatDateTime))
+	}
+	if body.TargetState != nil {
+		if !(*body.TargetState == "pending" || *body.TargetState == "reachable" || *body.TargetState == "unreachable" || *body.TargetState == "unknown") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.target_state", *body.TargetState, []any{"pending", "reachable", "unreachable", "unknown"}))
+		}
 	}
 	if body.DNS != nil {
 		if err2 := ValidateTunnelDiagnosticStepResponseBody(body.DNS); err2 != nil {
@@ -5578,6 +5592,11 @@ func ValidateTunnelDiagnosticStepResponseBody(body *TunnelDiagnosticStepResponse
 	}
 	if body.Failure == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("failure", "body"))
+	}
+	if body.State != nil {
+		if !(*body.State == "pass" || *body.State == "fail" || *body.State == "not_applicable" || *body.State == "not_tested") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.state", *body.State, []any{"pass", "fail", "not_applicable", "not_tested"}))
+		}
 	}
 	return
 }

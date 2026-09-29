@@ -2484,7 +2484,7 @@ SELECT throwIf(
   'demo seed postflight: Codex states no cost, so no Codex demo row may carry one');
 
 -- Payload-free tunnel example. This source ID is rewritten with the tenant's UUIDPrefix.
-ALTER TABLE tunnel_metric_snapshots DELETE WHERE source_id = 'dec0de00-0000-4000-a000-000000000701' SETTINGS mutations_sync=1;
+ALTER TABLE tunnel_metric_snapshots DELETE WHERE source_id = 'dec0de00-0000-4000-a000-000000000701' SETTINGS mutations_sync=2;
 INSERT INTO tunnel_metric_snapshots
 (gram_project_id,source_id,bucket,kind,producer_id,server_id,method,client_family,revision,attempts,successes,errors,canceled,incomplete,latency_bins,connections,consumers,substreams,diagnostics_available,targets_unreachable,connections_opened)
 SELECT toUUID('dec0de00-0000-4000-a000-000000000001'),toUUID('dec0de00-0000-4000-a000-000000000701'),toStartOfMinute(now())-toIntervalMinute(number+20),

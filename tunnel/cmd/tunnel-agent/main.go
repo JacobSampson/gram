@@ -54,7 +54,7 @@ func main() {
 
 	logger.Info("tunnel-agent starting",
 		slog.String("agent_version", wire.AgentVersion),
-		slog.String("gateway", cfg.GatewayURL), slog.String("local_mcp", wire.TargetDisplay(cfg.LocalMCPURL)))
+		slog.String("gateway", wire.GatewayDisplay(cfg.GatewayURL)), slog.String("local_mcp", wire.TargetDisplay(cfg.LocalMCPURL)))
 	if err := a.Run(ctx); err != nil && ctx.Err() == nil {
 		logger.Error("tunnel-agent exited", slog.Any("error", err))
 		os.Exit(1)

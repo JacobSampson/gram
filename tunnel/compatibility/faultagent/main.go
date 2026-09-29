@@ -58,6 +58,11 @@ func main() {
 		os.Exit(2)
 	}
 
+	gateway, parseErr := url.Parse(gatewayURL)
+	if parseErr != nil || gateway.Hostname() == "" || (gateway.Scheme != "wss" && (gateway.Scheme != "ws" || !net.ParseIP(gateway.Hostname()).IsLoopback())) {
+		logger.ErrorContext(ctx, "gateway must use wss or loopback ws")
+		os.Exit(2)
+	}
 	token := make([]byte, 32)
 	_, _ = rand.Read(token)
 	header := http.Header{}
@@ -66,7 +71,7 @@ func main() {
 	header.Set("X-Gram-Tunnel-Service-Version", "fault-"+*mode)
 	header.Set("X-Gram-Tunnel-Agent-Capabilities", "diagnostics.v1")
 	header.Set("X-Gram-Tunnel-Control-Token", hex.EncodeToString(token))
-	header.Set("X-Gram-Tunnel-Target-Display", "http://"+target.Host+target.Path)
+	header.Set("X-Gram-Tunnel-Target-Display", (&url.URL{Scheme: target.Scheme, Host: target.Host, Path: target.Path, RawPath: target.RawPath}).String())
 
 	dialCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	ws, _, err := websocket.Dial(dialCtx, gatewayURL, &websocket.DialOptions{HTTPHeader: header})

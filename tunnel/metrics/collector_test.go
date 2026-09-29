@@ -11,6 +11,8 @@ import (
 
 func TestCumulativeSnapshotsHaveStableIdentityAndIncreasingRevision(t *testing.T) {
 	c := New()
+	now := time.Now().UTC().Truncate(time.Minute).Add(10 * time.Second)
+	c.now = func() time.Time { return now }
 	c.Observe("source", "server", "tools/call", "claude", "attempt", 0)
 	var first, second Snapshot
 	c.Flush(t.Context(), func(_ context.Context, s Snapshot) error {
@@ -33,6 +35,7 @@ func TestCumulativeSnapshotsHaveStableIdentityAndIncreasingRevision(t *testing.T
 	require.EqualValues(t, 1, second.Successes)
 	require.EqualValues(t, 1, second.LatencyBins[2])
 }
+
 func TestDimensionsDiscardUnknownNames(t *testing.T) {
 	require.Equal(t, "other", Method("private/method/secret"))
 	require.Equal(t, "other", ClientFamily("PrivateClient/private-user"))
@@ -111,4 +114,21 @@ func TestGatewayCoverageKeepsDisconnectedZeroForBoundedLease(t *testing.T) {
 	require.Empty(t, c.sources, "gateway observation cannot prove MCP request coverage")
 	c.gaugeSources["source"] = time.Now().Add(-6 * time.Minute)
 	require.Empty(t, c.GaugeSources())
+}
+
+func TestCoverageSourcesExpireAndPublishedRowsDoNotCountAsLoss(t *testing.T) {
+	c := New()
+	now := time.Now().UTC().Truncate(time.Minute)
+	c.now = func() time.Time { return now }
+	c.Observe("expired", "server", "tools/list", "unknown", "attempt", 0)
+	publish := func(context.Context, Snapshot) error { return nil }
+	c.Flush(t.Context(), publish)
+	now = now.Add(2 * time.Minute)
+	c.Flush(t.Context(), publish)
+	now = now.Add(10 * time.Minute)
+	c.Flush(t.Context(), publish)
+	require.Empty(t, c.sources)
+	require.Zero(t, c.Dropped())
+	c.Observe("replacement", "server", "tools/list", "unknown", "attempt", 0)
+	require.Contains(t, c.sources, "replacement")
 }

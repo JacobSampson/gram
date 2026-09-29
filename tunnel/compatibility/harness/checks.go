@@ -241,9 +241,13 @@ func (c *checker) checkStatusPassthrough(ctx context.Context) {
 			problems = append(problems, err.Error())
 			continue
 		}
-		raw, _ := readAll(resp)
+		raw, readErr := readAll(resp)
 		var echo echoResponse
-		if resp.StatusCode != status || json.Unmarshal(raw, &echo) != nil || resp.Header.Get(hdrTunnelError) != "" {
+		wantQuery := fmt.Sprintf("status=%d", status)
+		if c.secrets.target.enabled() {
+			wantQuery = c.secrets.target.query + "&" + wantQuery
+		}
+		if readErr != nil || resp.StatusCode != status || json.Unmarshal(raw, &echo) != nil || resp.Header.Get(hdrTunnelError) != "" || echo.Method != http.MethodGet || echo.Path != c.as.targetPath("/echo") || echo.RawQuery != wantQuery || echo.Body != "" || resp.Header.Get("X-Compat-Upstream") != "yes" {
 			problems = append(problems, fmt.Sprintf("want %d got %d tunnel-error=%q", status, resp.StatusCode, resp.Header.Get(hdrTunnelError)))
 		}
 	}
@@ -449,9 +453,15 @@ func (c *checker) checkControlIsolation(ctx context.Context) {
 		_, _ = readAll(resp)
 		statuses[p.method+" "+p.path] = resp.StatusCode
 	}
-	for _, k := range []string{"GET /_tunnel/status", "POST /_tunnel/status", "GET /_tunnel/unknown"} {
-		if statuses[k] != http.StatusNotFound {
-			problems = append(problems, fmt.Sprintf("%s -> %d, want 404", k, statuses[k]))
+	for _, k := range []string{"GET /_tunnel/status", "POST /_tunnel/status", "GET /_tunnel/unknown", "POST /_tunnel/hello"} {
+		want := http.StatusNotFound
+		// Frozen gateways forward the legacy hello handshake to the agent.
+		// New gateways block consumer access to all reserved control paths.
+		if c.gs.Old && k == "POST /_tunnel/hello" {
+			want = http.StatusOK
+		}
+		if statuses[k] != want {
+			problems = append(problems, fmt.Sprintf("%s -> %d, want %d", k, statuses[k], want))
 		}
 	}
 	for _, r := range c.requestsSince(started, "") {
@@ -560,7 +570,14 @@ func (c *checker) checkSoak(ctx context.Context) {
 // diagnosticsExpected is true only when both sides support diagnostics and the
 // agent has not opted out.
 func (c *checker) diagnosticsExpected() bool {
-	return c.as.Diagnostics && !c.gs.Old && !slices.Contains(c.gs.Env, "TUNNEL_DIAGNOSTICS_ENABLED=0")
+	enabled := true
+	for _, entry := range c.gs.Env {
+		if value, ok := strings.CutPrefix(entry, "TUNNEL_DIAGNOSTICS_ENABLED="); ok {
+			value = strings.ToLower(strings.TrimSpace(value))
+			enabled = value != "0" && value != "false"
+		}
+	}
+	return c.as.Diagnostics && !c.gs.Old && enabled
 }
 
 func (c *checker) checkSessionPinning() {

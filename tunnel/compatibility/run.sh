@@ -36,10 +36,13 @@ done
 # Resolve the pinned Go toolchain once; the old snapshot has no mise config.
 go_bin=$(cd "$repo_root" && mise which go)
 export GOWORK=off GOFLAGS=-mod=readonly GOTOOLCHAIN=local
+# Never remove caller-selected paths. Each build owns a fresh private child.
+mkdir -p "$work"
+work=$(cd "$work" && pwd -P)
+work=$(mktemp -d "$work/run.XXXXXXXX")
 bin_dir="$work/bin"
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 out_dir="$work/runs/$stamp"
-rm -rf "$bin_dir" "$work/old-src" "$work/main-src"
 mkdir -p "$bin_dir/new" "$out_dir"
 
 sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
@@ -49,7 +52,10 @@ sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
 # file, builds the agent and gateway into $bin_dir/NAME and prints provenance.
 build_frozen() {
     local name=$1 ref=$2 commit src
-    commit=$(git -C "$repo_root" rev-parse --verify "$ref^{commit}")
+    if ! commit=$(git -C "$repo_root" rev-parse --verify "$ref^{commit}" 2>/dev/null); then
+        echo "Missing frozen revision $ref. Fetch full history (git fetch --unshallow origin for a shallow checkout), then rerun." >&2
+        exit 1
+    fi
     src="$work/$name-src"
     mkdir -p "$src" "$bin_dir/$name"
     echo "==> exporting frozen $name tunnel source at $commit" >&2

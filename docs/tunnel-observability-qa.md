@@ -1,3 +1,9 @@
+> Evidence retention: historical `/tmp/` logs and `.playwright-cli/` captures
+> referenced below are local-only, ignored artifacts. They are not durable PR
+> artifacts and may disappear when this worktree is cleaned. The harness and
+> commands are committed so the checks can be reproduced. Refreshed public GIFs
+> on the PR are presentation evidence, not substitutes for the test reports.
+
 # Tunnel observability implementation QA
 
 Date: 2026-09-28. Base: `ecf54b81f4`; implementation commit: `2d625f0638`.

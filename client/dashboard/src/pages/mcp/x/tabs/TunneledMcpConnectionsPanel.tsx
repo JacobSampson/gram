@@ -134,6 +134,7 @@ export function TunneledMcpConnectionsPanel({
     telemetry.isFeatureEnabled(FEATURE_FLAGS.tunnelObservability) === true;
   const linked = useMcpServers({ tunneledMcpServerId }, undefined, {
     enabled: enhanced,
+    throwOnError: false,
   });
   // The status badge and last-seen come from the source row, so it polls on
   // the same cadence as the connections table or it would go stale as agents
@@ -142,6 +143,7 @@ export function TunneledMcpConnectionsPanel({
     getTunneledMcpServerArgs(tunneledMcpServerId),
     undefined,
     {
+      enabled: !enhanced,
       refetchInterval: CONNECTIONS_POLL_MS,
       refetchIntervalInBackground: false,
     },
@@ -163,7 +165,9 @@ export function TunneledMcpConnectionsPanel({
         connections={data}
         loading={isLoading}
         error={isError}
-        linkedServers={linked.data?.mcpServers.length}
+        linkedServers={
+          linked.isError ? undefined : linked.data?.mcpServers.length
+        }
         agentSetupHref={agentSetupHref}
       />
     );

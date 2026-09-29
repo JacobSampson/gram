@@ -110,7 +110,7 @@ func (t observedTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.report.HTTPProgress.WaitingHeaders--
-	if err != nil && errors.Is(err, context.Canceled) {
+	if err != nil && (req.Context().Err() != nil || errors.Is(err, context.Canceled)) {
 		return response, err
 	}
 	if err != nil {
@@ -204,6 +204,9 @@ func transportFailure(err error) string {
 func probeTarget(ctx context.Context, target *url.URL) (string, wire.DiagnosticStep, wire.DiagnosticStep, wire.DiagnosticStep) {
 	dns := wire.DiagnosticStep{State: "not_tested"}
 	tcp, tlsStep := dns, dns
+	if target.Scheme != "http" && target.Scheme != "https" {
+		return "unknown", dns, tcp, tlsStep
+	}
 	if target.Scheme == "http" {
 		tlsStep.State = "not_applicable"
 	}

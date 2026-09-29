@@ -55,7 +55,7 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	collector := startMetrics(ctx, logger)
+	collector, stopMetrics := startMetrics(ctx, logger)
 
 	gw, err := gateway.New(gateway.Config{
 		AdvertiseAddr: advertiseAddr,
@@ -124,6 +124,11 @@ func main() {
 		}
 	}
 	<-shutdownDone
+	metricsCtx, cancelMetrics := context.WithTimeout(context.Background(), 15*time.Second)
+	if err := stopMetrics(metricsCtx); err != nil {
+		logger.WarnContext(metricsCtx, "tunnel metrics shutdown incomplete", slog.Any("error", err))
+	}
+	cancelMetrics()
 	if serverErr != nil {
 		logger.ErrorContext(context.Background(), "tunnel-gateway server error", slog.Any("error", serverErr))
 		os.Exit(1)

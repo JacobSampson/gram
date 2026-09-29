@@ -113,9 +113,9 @@ func newMCPService(c *cli.Context, d mcpServiceDependencies) (*mcp.Service, erro
 
 // newTunnelMetrics enables the same bounded observer in every MCP serving tier.
 // Publication failures leave forwarding available and history uncollected.
-func newTunnelMetrics(ctx context.Context, logger *slog.Logger, broker gcp.PublisherBroker, enabled bool) *metrics.Collector {
+func newTunnelMetrics(ctx context.Context, logger *slog.Logger, broker gcp.PublisherBroker, enabled bool) (*metrics.Collector, func(context.Context) error) {
 	if !enabled {
-		return nil
+		return nil, func(context.Context) error { return nil }
 	}
 	const publisherInitTimeout = 5 * time.Second // Bound optional startup work.
 	initCtx, cancel := context.WithTimeout(ctx, publisherInitTimeout)
@@ -123,9 +123,7 @@ func newTunnelMetrics(ctx context.Context, logger *slog.Logger, broker gcp.Publi
 	pub, err := metricspub.NewPublisher(initCtx, broker)
 	if err != nil {
 		logger.WarnContext(ctx, "tunnel metrics unavailable", attr.SlogError(err))
-		return nil
+		return nil, func(context.Context) error { return nil }
 	}
-	collector := metrics.New()
-	go collector.Run(ctx, metricspub.Publish(pub))
-	return collector
+	return metricspub.Start(ctx, pub)
 }

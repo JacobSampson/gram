@@ -74,7 +74,8 @@ export function TunnelObservability({
   const fresh = live.filter(
     (c) =>
       c.diagnostics?.state === "available" &&
-      c.diagnostics.targetState !== "pending",
+      (c.diagnostics.targetState === "reachable" ||
+        c.diagnostics.targetState === "unreachable"),
   );
   const failing = fresh.filter(
     (c) => c.diagnostics?.targetState === "unreachable",
@@ -104,7 +105,11 @@ export function TunnelObservability({
   const success = sum("successes");
   const historyReady = !history.isError && history.data?.state === "available";
   const hasActivity = points.some(
-    (p) => p.toolCalls != null || p.toolsList != null,
+    (p) =>
+      p.toolCalls != null ||
+      p.toolsList != null ||
+      p.successes != null ||
+      p.errors != null,
   );
   return (
     <section className="mb-8 space-y-6" aria-label="Tunnel health and activity">
@@ -627,7 +632,16 @@ function MetricChart({
     animation: false,
     spanGaps: false,
     interaction: { mode: "index", intersect: false },
-    plugins: { legend: { position: "bottom" }, tooltip: { ...TOOLTIP } },
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        ...TOOLTIP,
+        callbacks: {
+          label: (context) =>
+            `${context.dataset.label}: ${context.raw === 60001 && title.toLowerCase().includes("latency") ? ">60 s" : context.formattedValue}`,
+        },
+      },
+    },
     scales: {
       x: {
         ticks: { maxTicksLimit: 6, color: AXIS.label },

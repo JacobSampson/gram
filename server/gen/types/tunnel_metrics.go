@@ -10,7 +10,7 @@ package types
 // TunnelMetrics is the result type of the tunneledMcp service getServerMetrics
 // method.
 type TunnelMetrics struct {
-	// available, unavailable, too_large, or disabled
+	// History availability
 	State         string
 	ObservedAt    string
 	LastSampleAt  *string

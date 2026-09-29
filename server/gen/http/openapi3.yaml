@@ -106783,7 +106783,12 @@ components:
                     description: Bounded failure category, never raw error text
                 state:
                     type: string
-                    description: pass, fail, not_applicable or not_tested
+                    description: Probe state
+                    enum:
+                        - pass
+                        - fail
+                        - not_applicable
+                        - not_tested
             required:
                 - state
                 - duration_ms
@@ -106828,10 +106833,22 @@ components:
                     format: int64
                 state:
                     type: string
-                    description: pending, available, stale, unavailable, unsupported or disabled
+                    description: Diagnostic collection state
+                    enum:
+                        - pending
+                        - available
+                        - stale
+                        - unavailable
+                        - unsupported
+                        - disabled
                 target_state:
                     type: string
-                    description: pending, reachable, unreachable or unknown. Reachable means transport only, not MCP success.
+                    description: Reachable means transport only, not MCP success.
+                    enum:
+                        - pending
+                        - reachable
+                        - unreachable
+                        - unknown
                 tcp:
                     $ref: '#/components/schemas/TunnelDiagnosticStep'
                 tls:
@@ -106951,7 +106968,12 @@ components:
                         $ref: '#/components/schemas/TunnelMetricPoint'
                 state:
                     type: string
-                    description: available, unavailable, too_large, or disabled
+                    description: History availability
+                    enum:
+                        - available
+                        - unavailable
+                        - too_large
+                        - disabled
             required:
                 - state
                 - observed_at

@@ -3,7 +3,6 @@ package gateway
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"math/rand/v2"
@@ -139,14 +138,7 @@ func readDiagnostics(ctx context.Context, session *yamux.Session, token string) 
 	if len(body) > wire.MaxDiagnosticsBytes {
 		return nil, errors.New("diagnostic report too large")
 	}
-	var report wire.DiagnosticsReport
-	if err = json.Unmarshal(body, &report); err != nil {
-		return nil, errors.New("invalid diagnostic report")
-	}
-	if err = report.Validate(); err != nil {
-		return nil, err
-	}
-	return &report, nil
+	return wire.DecodeDiagnostics(body)
 }
 
 func (r *registry) updateDiagnostics(tunnelID, sessionID string, report *wire.DiagnosticsReport, state string, attemptedAt time.Time) {

@@ -390,7 +390,7 @@ var ListServersResult = Type("ListTunneledMcpServersResult", func() {
 
 var TunnelDiagnosticStep = Type("TunnelDiagnosticStep", func() {
 	Meta("struct:pkg:path", "types")
-	Attribute("state", String, "pass, fail, not_applicable or not_tested")
+	Attribute("state", String, "Probe state", func() { Enum("pass", "fail", "not_applicable", "not_tested") })
 	Attribute("duration_ms", Int64, "Elapsed probe time in milliseconds")
 	Attribute("failure", String, "Bounded failure category, never raw error text")
 	Required("state", "duration_ms", "failure")
@@ -403,10 +403,10 @@ var TunnelHTTPProgress = Type("TunnelHTTPProgress", func() {
 })
 var TunnelDiagnostics = Type("TunnelDiagnostics", func() {
 	Meta("struct:pkg:path", "types")
-	Attribute("state", String, "pending, available, stale, unavailable, unsupported or disabled")
+	Attribute("state", String, "Diagnostic collection state", func() { Enum("pending", "available", "stale", "unavailable", "unsupported", "disabled") })
 	Attribute("received_at", String, "Gateway receipt time", func() { Format(FormatDateTime) })
 	Attribute("sample_age_ms", Int64, "Probe age at view time, -1 if never sampled")
-	Attribute("target_state", String, "pending, reachable, unreachable or unknown. Reachable means transport only, not MCP success.")
+	Attribute("target_state", String, "Reachable means transport only, not MCP success.", func() { Enum("pending", "reachable", "unreachable", "unknown") })
 	Attribute("consecutive_failures", Int64, "Consecutive failed transport probes")
 	Attribute("dns", TunnelDiagnosticStep)
 	Attribute("tcp", TunnelDiagnosticStep)
@@ -450,7 +450,7 @@ var TunnelClientCount = Type("TunnelClientCount", func() {
 })
 var TunnelMetrics = Type("TunnelMetrics", func() {
 	Meta("struct:pkg:path", "types")
-	Attribute("state", String, "available, unavailable, too_large, or disabled")
+	Attribute("state", String, "History availability", func() { Enum("available", "unavailable", "too_large", "disabled") })
 	Attribute("observed_at", String, func() { Format(FormatDateTime) })
 	Attribute("last_sample_at", String, func() { Format(FormatDateTime) })
 	Attribute("bucket_seconds", Int)

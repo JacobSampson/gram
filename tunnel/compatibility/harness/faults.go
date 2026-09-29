@@ -100,7 +100,11 @@ func runFault(o options, mode string, gs gatewaySpec) pairResult {
 			if err != nil {
 				forwardProblems = append(forwardProblems, err.Error())
 			} else {
-				_, _ = readAll(resp)
+				raw, readErr := readAll(resp)
+				var echo echoResponse
+				if readErr != nil || json.Unmarshal(raw, &echo) != nil || echo.Body != `{"fault":"`+mode+`"}` {
+					forwardProblems = append(forwardProblems, "echo body mismatch or read failure")
+				}
 				if resp.StatusCode != http.StatusOK {
 					forwardProblems = append(forwardProblems, fmt.Sprintf("status %d %s", resp.StatusCode, resp.Header.Get(hdrTunnelError)))
 				}
@@ -137,8 +141,9 @@ func runFault(o options, mode string, gs gatewaySpec) pairResult {
 		add("fault_snapshot_no_sentinel", false, "state: err=%v", err)
 	}
 
-	gwLines, gwRaw, _ := readLog(gwLog)
-	agLines, _, _ := readLog(agentLog)
+	gwLines, gwRaw, gwErr := readLog(gwLog)
+	agLines, _, agErr := readLog(agentLog)
+	add("logs_readable", gwErr == nil && agErr == nil, "gateway=%v agent=%v", gwErr, agErr)
 	var yamuxErrs []string
 	for _, l := range gwLines {
 		if strings.Contains(l.Raw, "yamux") && (strings.EqualFold(l.Level, "ERROR") || strings.EqualFold(l.Level, "WARN")) {

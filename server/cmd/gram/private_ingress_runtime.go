@@ -245,8 +245,10 @@ func newPrivateIngressRuntime(ctx context.Context, c *cli.Context, logger *slog.
 	}
 	r.cleanup = append(r.cleanup, func(context.Context) error { remoteSessionDeps.Refresher.Shutdown(); return nil })
 	challengeManager := remoteSessionDeps.Challenges
+	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, broker, c.Bool("tunnel-metrics-enabled"))
+	r.cleanup = append(r.cleanup, stopTunnelMetrics)
 	mcpService, err := newMCPService(c, mcpServiceDependencies{
-		TunnelMetrics: newTunnelMetrics(ctx, logger, broker, c.Bool("tunnel-metrics-enabled")),
+		TunnelMetrics: tunnelCollector,
 		Logger:        logger, Tracer: tracerProvider, Meter: meterProvider, DB: db, Redis: redisClient,
 		Sessions: sessionManager, ChatSessions: chatSessions, Environment: env,
 		Posthog: posthogClient, Features: featureFlags, ServerURL: serverURL, SiteURL: siteURL,

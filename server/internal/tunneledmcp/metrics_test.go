@@ -27,7 +27,7 @@ func TestGetMetricsRequiresSourceProjectAccess(t *testing.T) {
 	readCtx := authztest.WithExactGrants(t, ctx, projectScopedMCPGrant(authz.ScopeMCPRead, *authCtx.ProjectID))
 	result, err := ti.service.GetServerMetrics(readCtx, payload)
 	require.NoError(t, err)
-	require.Contains(t, []string{"disabled", "unavailable"}, result.State)
+	require.Equal(t, "disabled", result.State)
 	payload.ID = uuid.NewString()
 	_, err = ti.service.GetServerMetrics(readCtx, payload)
 	requireOopsCode(t, err, oops.CodeNotFound)

@@ -132,13 +132,16 @@ func (s gatewayState) connections() []map[string]json.RawMessage {
 	return out
 }
 
+// Admin traffic is local-only and must never use environment proxies.
+var adminClient = &http.Client{Transport: &http.Transport{Proxy: nil}, Timeout: 2 * time.Second}
+
 func (g *gatewayProc) state(ctx context.Context) (gatewayState, error) {
 	var st gatewayState
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+g.ready.AdminAddr+"/state", nil)
 	if err != nil {
 		return st, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := adminClient.Do(req)
 	if err != nil {
 		return st, err
 	}
@@ -152,6 +155,8 @@ func (g *gatewayProc) state(ctx context.Context) (gatewayState, error) {
 // waitConnected polls gateway state until exactly one agent session is live,
 // routed, and projected into a connection snapshot.
 func (g *gatewayProc) waitConnected(ctx context.Context, timeout time.Duration) (gatewayState, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	deadline := time.Now().Add(timeout)
 	var last gatewayState
 	var lastErr error
@@ -191,6 +196,9 @@ type agentSpec struct {
 
 // targetPath is the path the target must see for a forwarded non-root path.
 func (s agentSpec) targetPath(forwarded string) string {
+	if forwarded == "/" {
+		return upstreamBasePath
+	}
 	if s.PreservesPath {
 		return forwarded
 	}
@@ -333,5 +341,5 @@ func (d targetDecoration) secrets() map[string]string {
 	if !d.enabled() {
 		return nil
 	}
-	return map[string]string{"target password": d.password, "target query": d.query, "target fragment": d.fragment}
+	return map[string]string{"target username": d.user, "target password": d.password, "target query": d.query, "target fragment": d.fragment}
 }
