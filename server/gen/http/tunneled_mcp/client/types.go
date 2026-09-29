@@ -3396,8 +3396,8 @@ func ValidateGetServerMetricsResponseBody(body *GetServerMetricsResponseBody) (e
 		err = goa.MergeErrors(err, goa.MissingFieldError("active_servers", "body"))
 	}
 	if body.State != nil {
-		if !(*body.State == "available" || *body.State == "unavailable" || *body.State == "too_large" || *body.State == "disabled") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.state", *body.State, []any{"available", "unavailable", "too_large", "disabled"}))
+		if !(*body.State == "available" || *body.State == "unavailable" || *body.State == "too_large") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.state", *body.State, []any{"available", "unavailable", "too_large"}))
 		}
 	}
 	if body.ObservedAt != nil {

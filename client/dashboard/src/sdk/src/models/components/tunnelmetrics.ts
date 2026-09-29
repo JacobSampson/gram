@@ -24,7 +24,6 @@ export const TunnelMetricsState = {
   Available: "available",
   Unavailable: "unavailable",
   TooLarge: "too_large",
-  Disabled: "disabled",
 } as const;
 /**
  * History availability

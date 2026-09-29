@@ -145,7 +145,7 @@ Browser verification: `[~]` (not yet verified); see check 18 in `verify.md`.
 
 ## Tunnel source observability
 
-The Private inventory tunnel source has one linked private MCP server and deterministic 24-hour request/connection history with a recent gap. It is intentionally disconnected; no synthetic agent reaches a private target. Live HTTP progress is never seeded as fresh evidence. For real local agents, use `examples/tunnel-diagnostics/README.md`; the five idle fixtures show transport results without issuing MCP calls. Open its Overview with `gram-tunnel-observability` enabled and verify charts, the gap, and the no-agent diagnostic state.
+The Private inventory tunnel source has one linked private MCP server and deterministic 24-hour request/connection history with a recent gap. It has no connected agent. Live HTTP progress is never seeded as fresh evidence. Open its Overview with `gram-tunnel-observability` enabled and verify charts, the gap, and the no-agent diagnostic state.
 
 ## Local only (RunLocalFixtures, never the demo org)
 
@@ -242,4 +242,4 @@ Enter through `/explore-demo` using an ordinary browser session, then open Amara
 
 Shared Explore Demo is read-only for Slack connections, syncing and mappings. The retargeted local organization remains writable.
 
-Tunnel observability browser verification: [x] seeded + verified 2026-09-29 (all three ranges, data table, gaps, linked count and no-agent state). See the Tunnel observability check in `verify.md`.
+Tunnel observability: [x] seeded and browser-verified for all three ranges, the data table, gaps, linked count, and no-agent state.

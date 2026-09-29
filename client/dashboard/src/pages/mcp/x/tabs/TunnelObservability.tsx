@@ -157,8 +157,7 @@ export function TunnelObservability({
         <div>
           <h2 className="text-display-xs">Activity</h2>
           <p className="text-muted-foreground text-sm">
-            Activity across all MCP servers using this tunnel. Tool logs
-            settings are unchanged.
+            Activity across all MCP servers using this tunnel.
           </p>
         </div>
         <SegmentedControl
@@ -175,8 +174,9 @@ export function TunnelObservability({
       <div className="space-y-3">
         <h2 className="text-display-xs">Agents & target checks</h2>
         <p className="text-muted-foreground text-sm">
-          DNS, TCP, and TLS checks run every 30 seconds. HTTP progress is
-          sampled from normal traffic; checks never invoke MCP methods or tools.
+          DNS, TCP, and TLS checks run about every 30 seconds while polling is
+          active. HTTP progress is sampled from normal traffic; checks never
+          invoke MCP methods or tools.
         </p>
         <AgentList
           live={live}
@@ -208,28 +208,18 @@ function ActivityHistory({
 
 function activityUnavailable(state?: string) {
   switch (state) {
-    case undefined:
-      return {
-        heading: "Activity history is unavailable",
-        description:
-          "We’ll retry automatically. Live tunnel status is shown separately.",
-      };
     case "too_large":
       return {
         heading: "This time range contains too much activity",
         description:
           "Choose a shorter time range above. Live connection and target checks remain available.",
       };
-    case "disabled":
-      return {
-        heading: "Activity history is not enabled",
-        description: "Live connection and target checks are still shown below.",
-      };
+    case undefined:
     default:
       return {
         heading: "Activity history is unavailable",
         description:
-          "We’ll retry automatically. Live tunnel status is shown separately.",
+          "History refreshes automatically. Live tunnel status is shown below.",
       };
   }
 }
@@ -269,8 +259,7 @@ function ActivityCharts({ history }: { history: TunnelMetrics }) {
         ]}
       />
       <p className="text-muted-foreground text-xs">
-        Latency values are histogram upper bounds; the final bin means more than
-        60 seconds.
+        The final latency bin means more than 60 seconds.
       </p>
       <div className="flex flex-wrap justify-between gap-3 text-sm">
         <p className="text-muted-foreground">
@@ -289,10 +278,10 @@ function ActivityCharts({ history }: { history: TunnelMetrics }) {
         </p>
       </div>
       <p className="text-muted-foreground text-xs">
-        Best-effort observations from reporting collectors. Missing samples are
-        gaps, not zeros; a reporting collector cannot verify every replica.
+        Metrics are best-effort. Only reporting servers contribute to these
+        counts.
         {points.some((p) => p.collectionPartial) &&
-          " A collector reported lost aggregates; counts are incomplete."}
+          " Some aggregates were lost; counts are incomplete."}
       </p>
       <details className="border p-4">
         <summary className="cursor-pointer text-sm font-medium">
@@ -338,9 +327,8 @@ function ActivityCharts({ history }: { history: TunnelMetrics }) {
         </div>
       </details>
       <p className="text-muted-foreground text-sm">
-        After a disconnect, zero is observed for up to five minutes. Longer gaps
-        mean no gateway reported. Connections show observed agents; missing
-        gateways are not counted as zero. Requests count attempts; errors count
+        Missing samples show as gaps. Zero connections are recorded for up to
+        five minutes after a disconnect. Requests count attempts; errors count
         completions, which may fall in a later interval.
       </p>
       {history?.clients.length ? (
@@ -376,7 +364,7 @@ function AgentList({
       <InlineEmptyState
         icon="wifi-off"
         heading="Live status is unavailable"
-        description="We can’t determine whether agents are connected. Retrying automatically."
+        description="The latest connection status could not be loaded. Retrying automatically."
       />
     );
   if (!live.length)
@@ -502,7 +490,7 @@ function diagnosticLabel(d?: TunnelDiagnostics) {
 }
 const failures: Record<string, string> = {
   dns_not_found: "Hostname was not found. Check DNS and the target hostname.",
-  dns_timeout: "DNS lookup timed out. Check the agent’s resolver.",
+  dns_timeout: "DNS lookup timed out. Check DNS on the agent host.",
   dns_error: "DNS lookup failed.",
   tcp_refused:
     "Connection refused. Check the target port and whether the server is running.",
@@ -512,7 +500,7 @@ const failures: Record<string, string> = {
   tls_name_mismatch: "The certificate does not match the target hostname.",
   tls_error: "TLS negotiation failed.",
   proxy:
-    "A proxy is configured. Direct network probes are skipped; real traffic can still confirm HTTP reachability.",
+    "A proxy is configured. Direct network probes are skipped; HTTP reachability is observed from normal traffic.",
   unknown: "The transport failed. Check the local agent logs.",
 };
 function DiagnosticDetails({ value: d }: { value: TunnelDiagnostics }) {
@@ -599,8 +587,8 @@ function HttpProgress({ value: d }: { value: TunnelDiagnostics }) {
         </div>
       </dl>
       <p className="text-muted-foreground text-sm">
-        Counts reflect the last 30-second sample. Open streams may be expected.
-        HTTP responses alone do not confirm MCP success; activity charts show
+        Counts are from the latest report. Open streams may be expected. HTTP
+        responses alone do not confirm MCP success; activity charts show
         observed MCP outcomes.
       </p>
     </div>

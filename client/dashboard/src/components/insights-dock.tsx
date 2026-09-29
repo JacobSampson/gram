@@ -1139,9 +1139,8 @@ export function InsightsProvider({
     };
   }, [serverTransport]);
 
-  // Passive pages must not initialize every project MCP merely by mounting the
-  // collapsed composer. Discover when the user opens the assistant, or when a
-  // page explicitly owns its visible chat surface (Home / full-page chat).
+  // Discover tools when chat is visible or the assistant is opened.
+  // A collapsed composer does not connect to project MCP servers.
   const discoverMcpTools =
     isExpanded || onChatRoute || dockHiddenByPage || pendingPrompt !== null;
 

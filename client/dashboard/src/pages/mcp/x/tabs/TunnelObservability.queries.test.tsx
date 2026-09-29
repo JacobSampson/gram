@@ -8,9 +8,7 @@ import { isUnauthorizedError } from "@/lib/route-errors";
 import { TunneledMcpConnectionsPanel } from "./TunneledMcpConnectionsPanel";
 
 const requests = vi.hoisted(() => ({ history: vi.fn(), connections: vi.fn() }));
-// Keep the generated hooks and real QueryClient. Only replace the request
-// boundary so rejected requests exercise error-boundary behavior, not mocked
-// isError values.
+// Mock requests so the generated hooks and QueryClient handle each rejection.
 vi.mock("@gram/client/react-query/_context.js", () => ({
   useGramContext: () => ({}),
 }));

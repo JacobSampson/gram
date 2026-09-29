@@ -40,7 +40,7 @@ type HTTPProgress struct {
 // DiagnosticsReport is the allowlisted diagnostics.v1 wire contract. Ages are
 // relative to serialization on the agent, avoiding dependence on customer clocks.
 type DiagnosticsReport struct {
-	// HTTPProgress is absent on older agents, rather than an observed zero.
+	// Older agents omit HTTPProgress; absence means unavailable.
 	HTTPProgress                *HTTPProgress  `json:"http_progress,omitempty"`
 	Version                     int            `json:"version"`
 	Sequence                    uint64         `json:"sequence"`
@@ -58,7 +58,7 @@ type DiagnosticsReport struct {
 	LastTransportErrorAgeMillis int64          `json:"last_transport_error_age_ms"`
 }
 
-// Validate rejects unbounded or invented metric dimensions before persistence.
+// Validate checks numeric bounds and allowed metric categories.
 func (r DiagnosticsReport) Validate() error {
 	if r.Version != 1 || !oneOf(r.TargetState, "pending", "reachable", "unreachable", "unknown") || !validAge(r.SampleAgeMillis) || !validAge(r.LastHTTPResponseAgeMillis) || !validAge(r.LastTransportErrorAgeMillis) {
 		return errors.New("invalid diagnostic report")
@@ -117,8 +117,7 @@ func TargetDisplay(raw string) string {
 	return display
 }
 
-// DecodeDiagnostics requires the v1 fields while ignoring future additive fields.
-// Unknown data is discarded here, never persisted or logged.
+// DecodeDiagnostics requires the v1 fields and discards unknown fields.
 func DecodeDiagnostics(data []byte) (*DiagnosticsReport, error) {
 	required := []string{"version", "sequence", "sample_age_ms", "target_state", "consecutive_failures", "dns", "tcp", "tls", "requests_total", "transport_errors_total", "last_http_status", "last_http_response_age_ms", "last_transport_error", "last_transport_error_age_ms"}
 	var fields map[string]json.RawMessage

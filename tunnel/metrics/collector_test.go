@@ -108,11 +108,13 @@ func TestCoverageReportsIdleAndLossWithoutRequestPayloads(t *testing.T) {
 
 func TestGatewayCoverageKeepsDisconnectedZeroForBoundedLease(t *testing.T) {
 	c := New()
-	c.Connections("source", 1, 0, 0, 0, 0, 1)
-	c.Connections("source", 0, 0, 0, 0, 0, 0)
+	now := time.Now()
+	c.now = func() time.Time { return now }
+	c.Connections("source", 1, 0, 0, 1)
+	c.Connections("source", 0, 0, 0, 0)
 	require.Equal(t, []string{"source"}, c.GaugeSources())
 	require.Empty(t, c.sources, "gateway observation cannot prove MCP request coverage")
-	c.gaugeSources["source"] = time.Now().Add(-6 * time.Minute)
+	now = now.Add(6 * time.Minute)
 	require.Empty(t, c.GaugeSources())
 }
 
@@ -128,7 +130,7 @@ func TestCoverageSourcesExpireAndPublishedRowsDoNotCountAsLoss(t *testing.T) {
 	now = now.Add(10 * time.Minute)
 	c.Flush(t.Context(), publish)
 	require.Empty(t, c.sources)
-	require.Zero(t, c.Dropped())
+	require.Zero(t, c.dropped.Load())
 	c.Observe("replacement", "server", "tools/list", "unknown", "attempt", 0)
 	require.Contains(t, c.sources, "replacement")
 }

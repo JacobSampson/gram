@@ -16,7 +16,7 @@ vi.mock("@gram/client/react-query/getTunneledMcpServerMetrics.js", () => ({
 }));
 beforeEach(() =>
   mocks.history.mockReturnValue({
-    data: { state: "disabled", points: [], clients: [] },
+    data: { state: "unavailable", points: [], clients: [] },
     isPending: false,
     isError: false,
   }),
@@ -57,7 +57,7 @@ describe("tunnel status evidence", () => {
     expect(screen.getByText("Diagnostics unsupported")).toBeTruthy();
     expect(screen.getByText("Not checked")).toBeTruthy();
     expect(screen.queryByText("Network reachable")).toBeNull();
-    expect(screen.getByText("Activity history is not enabled")).toBeTruthy();
+    expect(screen.getByText("Activity history is unavailable")).toBeTruthy();
   });
 
   it("does not show a cached healthy agent as live after a failed poll", () => {

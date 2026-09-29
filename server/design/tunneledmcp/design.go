@@ -450,7 +450,7 @@ var TunnelClientCount = Type("TunnelClientCount", func() {
 })
 var TunnelMetrics = Type("TunnelMetrics", func() {
 	Meta("struct:pkg:path", "types")
-	Attribute("state", String, "History availability", func() { Enum("available", "unavailable", "too_large", "disabled") })
+	Attribute("state", String, "History availability", func() { Enum("available", "unavailable", "too_large") })
 	Attribute("observed_at", String, func() { Format(FormatDateTime) })
 	Attribute("last_sample_at", String, func() { Format(FormatDateTime) })
 	Attribute("bucket_seconds", Int)

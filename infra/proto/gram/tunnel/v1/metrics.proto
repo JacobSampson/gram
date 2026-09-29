@@ -1,6 +1,5 @@
-// Deliberately retain proto3 implicit scalar presence and the open Go API for
-// this additive cross-version contract. A future Editions migration must preserve
-// zero-value wire encoding and coordinate the generated producer/consumer APIs.
+// Proto3 preserves implicit scalar presence and the open Go API used by producers
+// and consumers.
 syntax = "proto3";
 package gram.tunnel.v1;
 import "gcp/pubsub/v1/options.proto";
@@ -45,10 +44,8 @@ message MetricsSnapshot {
   uint32 consumers = 16;
   // Last-sample gauge: active forwarding streams.
   uint32 substreams = 17;
-  // Last-sample gauge: agent sessions with available diagnostics.
-  uint32 diagnostics_available = 18;
-  // Last-sample gauge: diagnostic targets failing at least two consecutive probes.
-  uint32 targets_unreachable = 19;
+  reserved 18, 19;
+  reserved "diagnostics_available", "targets_unreachable";
   // Cumulative connections opened during this connection bucket.
   uint64 connections_opened = 20;
 }

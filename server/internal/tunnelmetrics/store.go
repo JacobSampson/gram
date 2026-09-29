@@ -61,14 +61,14 @@ func validSnapshot(m *tunnelv1.MetricsSnapshot) bool {
 	case "coverage":
 		return m.BucketUnix%60 == 0 && m.Method == "" && m.ClientFamily == "" && m.ServerId == ""
 	case "connections":
-		return m.Method == "" && m.ClientFamily == "" && m.ServerId == "" && m.Connections <= 10000 && m.DiagnosticsAvailable <= m.Connections && m.TargetsUnreachable <= m.DiagnosticsAvailable
+		return m.Method == "" && m.ClientFamily == "" && m.ServerId == "" && m.Connections <= 10000
 	default:
 		return false
 	}
 }
 
-// HandleBatch is the existing gram streams batching interface. Latest-revision
-// reads tolerate Pub/Sub redelivery and late/out-of-order cumulative snapshots.
+// HandleBatch writes aggregate revisions. Reads use the latest revision to
+// handle Pub/Sub redelivery and snapshots received out of order.
 func (s *Store) HandleBatch(ctx context.Context, messages []*tunnelv1.MetricsSnapshot, _ []gcp.MessageMetadata) error {
 	valid := make([]*tunnelv1.MetricsSnapshot, 0, len(messages))
 	for _, m := range messages {
@@ -104,7 +104,7 @@ func (s *Store) HandleBatch(ctx context.Context, messages []*tunnelv1.MetricsSna
 		return nil
 	}
 	ctx = clickhouse.Context(ctx, clickhouse.WithSettings(clickhouse.Settings{"async_insert": 1, "wait_for_async_insert": 1}))
-	batch, err := s.conn.PrepareBatch(ctx, `INSERT INTO tunnel_metric_snapshots (gram_project_id,source_id,bucket,kind,producer_id,server_id,method,client_family,revision,attempts,successes,errors,canceled,incomplete,latency_bins,connections,consumers,substreams,diagnostics_available,targets_unreachable,connections_opened)`)
+	batch, err := s.conn.PrepareBatch(ctx, `INSERT INTO tunnel_metric_snapshots (gram_project_id,source_id,bucket,kind,producer_id,server_id,method,client_family,revision,attempts,successes,errors,canceled,incomplete,latency_bins,connections,consumers,substreams,connections_opened)`)
 	if err != nil {
 		return fmt.Errorf("prepare tunnel metrics batch: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *Store) HandleBatch(ctx context.Context, messages []*tunnelv1.MetricsSna
 		if m.ServerId != "" {
 			server = uuid.MustParse(m.ServerId)
 		}
-		if err = batch.Append(allowed[uuid.MustParse(m.SourceId)], uuid.MustParse(m.SourceId), time.Unix(m.BucketUnix, 0).UTC(), m.Kind, uuid.MustParse(m.ProducerId), server, m.Method, m.ClientFamily, m.Revision, m.Attempts, m.Successes, m.Errors, m.Canceled, m.Incomplete, m.LatencyBins, m.Connections, m.Consumers, m.Substreams, m.DiagnosticsAvailable, m.TargetsUnreachable, m.ConnectionsOpened); err != nil {
+		if err = batch.Append(allowed[uuid.MustParse(m.SourceId)], uuid.MustParse(m.SourceId), time.Unix(m.BucketUnix, 0).UTC(), m.Kind, uuid.MustParse(m.ProducerId), server, m.Method, m.ClientFamily, m.Revision, m.Attempts, m.Successes, m.Errors, m.Canceled, m.Incomplete, m.LatencyBins, m.Connections, m.Consumers, m.Substreams, m.ConnectionsOpened); err != nil {
 			return fmt.Errorf("append tunnel metrics: %w", err)
 		}
 	}
@@ -125,11 +125,11 @@ func (s *Store) HandleBatch(ctx context.Context, messages []*tunnelv1.MetricsSna
 }
 
 type Row struct {
-	Bucket                                                     time.Time
-	Kind, Method, Client, Producer, Server                     string
-	Attempts, Successes, Errors, Canceled, Incomplete, Opened  uint64
-	Bins                                                       []uint64
-	Connections, Consumers, Substreams, Available, Unreachable uint32
+	Bucket                                                    time.Time
+	Kind, Method, Client, Server                              string
+	Attempts, Successes, Errors, Canceled, Incomplete, Opened uint64
+	Bins                                                      []uint64
+	Connections, Consumers, Substreams                        uint32
 }
 
 // Read requires prior project/source authorization by the management handler.
@@ -137,11 +137,11 @@ type Row struct {
 func (s *Store) Read(ctx context.Context, project, source uuid.UUID, since time.Time) ([]Row, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	rows, err := s.conn.Query(ctx, `SELECT bucket,kind,method,client_family,toString(producer_id),toString(server_id),
+	rows, err := s.conn.Query(ctx, `SELECT bucket,kind,method,client_family,toString(server_id),
  argMax(attempts,revision) AS n_attempts,argMax(successes,revision) AS n_successes,argMax(errors,revision) AS n_errors,
  argMax(canceled,revision) AS n_canceled,argMax(incomplete,revision) AS n_incomplete,argMax(connections_opened,revision) AS n_opened,
  argMax(latency_bins,revision) AS n_bins,argMax(connections,revision) AS n_connections,argMax(consumers,revision) AS n_consumers,
- argMax(substreams,revision) AS n_substreams,argMax(diagnostics_available,revision) AS n_available,argMax(targets_unreachable,revision) AS n_unreachable
+ argMax(substreams,revision) AS n_substreams
  FROM tunnel_metric_snapshots WHERE gram_project_id=? AND source_id=? AND bucket>=? AND bucket<=now()
  GROUP BY bucket,kind,method,client_family,producer_id,server_id
  ORDER BY bucket LIMIT 200001`, project, source, since)
@@ -152,7 +152,7 @@ func (s *Store) Read(ctx context.Context, project, source uuid.UUID, since time.
 	result := make([]Row, 0)
 	for rows.Next() {
 		var r Row
-		if err = rows.Scan(&r.Bucket, &r.Kind, &r.Method, &r.Client, &r.Producer, &r.Server, &r.Attempts, &r.Successes, &r.Errors, &r.Canceled, &r.Incomplete, &r.Opened, &r.Bins, &r.Connections, &r.Consumers, &r.Substreams, &r.Available, &r.Unreachable); err != nil {
+		if err = rows.Scan(&r.Bucket, &r.Kind, &r.Method, &r.Client, &r.Server, &r.Attempts, &r.Successes, &r.Errors, &r.Canceled, &r.Incomplete, &r.Opened, &r.Bins, &r.Connections, &r.Consumers, &r.Substreams); err != nil {
 			return nil, fmt.Errorf("scan tunnel metrics: %w", err)
 		}
 		result = append(result, r)

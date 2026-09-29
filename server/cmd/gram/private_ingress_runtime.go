@@ -245,7 +245,7 @@ func newPrivateIngressRuntime(ctx context.Context, c *cli.Context, logger *slog.
 	}
 	r.cleanup = append(r.cleanup, func(context.Context) error { remoteSessionDeps.Refresher.Shutdown(); return nil })
 	challengeManager := remoteSessionDeps.Challenges
-	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, broker, c.Bool("tunnel-metrics-enabled"))
+	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, broker)
 	r.cleanup = append(r.cleanup, stopTunnelMetrics)
 	mcpService, err := newMCPService(c, mcpServiceDependencies{
 		TunnelMetrics: tunnelCollector,

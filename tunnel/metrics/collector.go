@@ -22,11 +22,11 @@ type Key struct {
 }
 type Snapshot struct {
 	Key
-	ProducerID                                                                   string
-	Revision                                                                     uint64
-	Attempts, Successes, Errors, Canceled, Incomplete, ConnectionsOpened         uint64
-	LatencyBins                                                                  [12]uint64
-	Connections, Consumers, Substreams, DiagnosticsAvailable, TargetsUnreachable uint32
+	ProducerID                                                           string
+	Revision                                                             uint64
+	Attempts, Successes, Errors, Canceled, Incomplete, ConnectionsOpened uint64
+	LatencyBins                                                          [12]uint64
+	Connections, Consumers, Substreams                                   uint32
 }
 type Collector struct {
 	mu           sync.Mutex
@@ -42,7 +42,6 @@ type Collector struct {
 func New() *Collector {
 	return &Collector{producerID: uuid.NewString(), series: make(map[Key]Snapshot), published: make(map[Key]uint64), sources: make(map[string]time.Time), now: time.Now, gaugeSources: make(map[string]time.Time)}
 }
-func (c *Collector) Dropped() uint64 { return c.dropped.Load() }
 func Method(value string) string {
 	switch value {
 	case "tools/call", "tools/list", "initialize", "resources/read", "resources/list", "prompts/list", "prompts/get", "ping":
@@ -110,17 +109,17 @@ func (c *Collector) Observe(source, server, method, client, outcome string, dura
 	}
 	c.series[key] = row
 }
-func (c *Collector) Connections(source string, connections, consumers, substreams, available, unreachable uint32, opened uint64) {
+func (c *Collector) Connections(source string, connections, consumers, substreams uint32, opened uint64) {
 	if c == nil {
 		return
 	}
 	key := Key{SourceID: source, Kind: "connections", Bucket: c.now().UTC().Truncate(15 * time.Second).Unix()}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if connections > 0 && len(c.gaugeSources) < 10000 {
-		c.gaugeSources[source] = time.Now()
-	} else if _, exists := c.gaugeSources[source]; exists && connections > 0 {
-		c.gaugeSources[source] = time.Now()
+	if connections > 0 {
+		if _, exists := c.gaugeSources[source]; exists || len(c.gaugeSources) < 10000 {
+			c.gaugeSources[source] = c.now()
+		}
 	}
 	row, ok := c.series[key]
 	if !ok && len(c.series) >= MaxSeries-10000 {
@@ -130,7 +129,7 @@ func (c *Collector) Connections(source string, connections, consumers, substream
 	row.Key = key
 	row.ProducerID = c.producerID
 	row.Revision++
-	row.Connections, row.Consumers, row.Substreams, row.DiagnosticsAvailable, row.TargetsUnreachable = connections, consumers, substreams, available, unreachable
+	row.Connections, row.Consumers, row.Substreams = connections, consumers, substreams
 	row.ConnectionsOpened += opened
 	row.Incomplete = c.dropped.Load()
 	c.series[key] = row
@@ -234,15 +233,14 @@ func boundedFamily(value string) string {
 	}
 }
 
-// GaugeSources retains a bounded five-minute observation lease after the last
-// connected sample. While the gateway lives it can explicitly observe zero;
-// after the lease expires history returns to unknown rather than inventing zero.
+// GaugeSources keeps disconnected sources for five minutes so the gateway can
+// report zero connections. After that, missing samples leave gaps in history.
 func (c *Collector) GaugeSources() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	result := make([]string, 0, len(c.gaugeSources))
 	for source, at := range c.gaugeSources {
-		if time.Since(at) > 5*time.Minute {
+		if c.now().Sub(at) > 5*time.Minute {
 			delete(c.gaugeSources, source)
 		} else {
 			result = append(result, source)

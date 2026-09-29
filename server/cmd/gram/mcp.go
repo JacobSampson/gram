@@ -310,7 +310,7 @@ func runMCPServer(c *cli.Context, shutdown *mcpServerShutdown) error {
 	if err != nil {
 		return err
 	}
-	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, psbroker, c.Bool("tunnel-metrics-enabled"))
+	tunnelCollector, stopTunnelMetrics := newTunnelMetrics(ctx, logger, psbroker)
 	stopClient := shutdown.funcs[pubsubClientShutdown]
 	shutdown.funcs[pubsubClientShutdown] = func(ctx context.Context) error {
 		return errors.Join(stopTunnelMetrics(ctx), stopClient(ctx))

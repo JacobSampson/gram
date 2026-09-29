@@ -2254,8 +2254,6 @@ CREATE TABLE IF NOT EXISTS tunnel_metric_snapshots (
     connections UInt32,
     consumers UInt32,
     substreams UInt32,
-    diagnostics_available UInt32,
-    targets_unreachable UInt32,
     connections_opened UInt64
 ) ENGINE = ReplacingMergeTree(revision)
 PARTITION BY toDate(bucket)

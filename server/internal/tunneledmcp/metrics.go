@@ -47,11 +47,7 @@ func (s *Service) GetServerMetrics(ctx context.Context, payload *gen.GetServerMe
 		duration, step = 7*24*time.Hour, time.Hour
 	}
 	now := time.Now().UTC()
-	view := &types.TunnelMetrics{State: "disabled", LastSampleAt: nil, ObservedAt: now.Format(time.RFC3339), BucketSeconds: int(step.Seconds()), Points: []*types.TunnelMetricPoint{}, Clients: []*types.TunnelClientCount{}, ActiveServers: 0}
-	if !s.MetricsEnabled {
-		return view, nil
-	}
-	view.State = "unavailable"
+	view := &types.TunnelMetrics{State: "unavailable", LastSampleAt: nil, ObservedAt: now.Format(time.RFC3339), BucketSeconds: int(step.Seconds()), Points: []*types.TunnelMetricPoint{}, Clients: []*types.TunnelClientCount{}, ActiveServers: 0}
 	if s.Metrics == nil {
 		return view, nil
 	}
@@ -102,7 +98,7 @@ func fillMetrics(view *types.TunnelMetrics, rows []tunnelmetrics.Row, since, now
 		}
 		switch r.Kind {
 		case "requests":
-			// Presence of an aggregate is explicit. Missing intervals remain null.
+			// An observed bucket starts at zero; missing buckets remain null.
 			add(&b.point.ToolCalls, 0)
 			add(&b.point.ToolsList, 0)
 			add(&b.point.OtherRequests, 0)

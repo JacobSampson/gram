@@ -1,2 +1,0 @@
-# Match the Python version used by the Compose fixtures.
-target-version = "py313"

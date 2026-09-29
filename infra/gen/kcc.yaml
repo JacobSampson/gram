@@ -1359,8 +1359,8 @@ pubsub:
           uint32 connections = 15;
           uint32 consumers = 16;
           uint32 substreams = 17;
-          uint32 diagnostics_available = 18;
-          uint32 targets_unreachable = 19;
+          reserved 18, 19;
+          reserved "diagnostics_available", "targets_unreachable";
           uint64 connections_opened = 20;
         }
       type: PROTOCOL_BUFFER

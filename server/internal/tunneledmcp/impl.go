@@ -42,15 +42,14 @@ import (
 )
 
 type Service struct {
-	Metrics        *tunnelmetrics.Store
-	MetricsEnabled bool
-	tracer         trace.Tracer
-	logger         *slog.Logger
-	db             *pgxpool.Pool
-	auth           *auth.Auth
-	authz          *authz.Engine
-	audit          *audit.Logger
-	tunnelManager  *tunnelManager
+	Metrics       *tunnelmetrics.Store
+	tracer        trace.Tracer
+	logger        *slog.Logger
+	db            *pgxpool.Pool
+	auth          *auth.Auth
+	authz         *authz.Engine
+	audit         *audit.Logger
+	tunnelManager *tunnelManager
 	// redisClient revokes live anonymous MCP sessions when public consent is
 	// withdrawn. Nil disables that best-effort cleanup (the serve path's
 	// consent guard still rejects per-request).
@@ -73,16 +72,15 @@ func NewService(
 	logger = logger.With(attr.SlogComponent("tunneledmcp"))
 
 	return &Service{
-		Metrics:        nil,
-		MetricsEnabled: false,
-		tracer:         tracerProvider.Tracer("github.com/speakeasy-api/gram/server/internal/tunneledmcp"),
-		logger:         logger,
-		db:             db,
-		auth:           auth.New(logger, db, sessions, authzEngine),
-		authz:          authzEngine,
-		audit:          auditLogger,
-		tunnelManager:  newTunnelManager(runtime),
-		redisClient:    redisClient,
+		Metrics:       nil,
+		tracer:        tracerProvider.Tracer("github.com/speakeasy-api/gram/server/internal/tunneledmcp"),
+		logger:        logger,
+		db:            db,
+		auth:          auth.New(logger, db, sessions, authzEngine),
+		authz:         authzEngine,
+		audit:         auditLogger,
+		tunnelManager: newTunnelManager(runtime),
+		redisClient:   redisClient,
 	}
 }
 

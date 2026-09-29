@@ -119,8 +119,7 @@ const columns: Column<TunneledMcpConnection>[] = [
   },
 ];
 
-// Ported from the retired tunneled source page's overview: which agents are
-// holding the tunnel open right now, and when the source was last seen.
+// Shows connected agents and the source's last-seen time.
 export function TunneledMcpConnectionsPanel({
   tunneledMcpServerId,
   agentSetupHref,

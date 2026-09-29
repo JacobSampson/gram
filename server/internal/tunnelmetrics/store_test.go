@@ -70,8 +70,8 @@ func TestIngestUsesAuthoritativeOwnersAndRetriesLookupFailure(t *testing.T) {
 			}
 		}
 	}
-	// Unknown/deleted source IDs omitted by the authoritative query never land,
-	// even under a zero project ID rather than merely hidden by tenant filters.
+	// Unknown and deleted sources must be dropped before insertion, including
+	// rows that would otherwise receive a zero project ID.
 	for _, source := range sources[2:] {
 		rows, err := store.Read(t.Context(), uuid.Nil, source, bucket)
 		require.NoError(t, err)

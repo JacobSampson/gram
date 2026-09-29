@@ -1,4 +1,4 @@
--- Create "tunnel_metric_snapshots" table
+-- create "tunnel_metric_snapshots" table
 CREATE TABLE `gram`.`tunnel_metric_snapshots` (
   `gram_project_id` UUID,
   `source_id` UUID,
@@ -18,8 +18,6 @@ CREATE TABLE `gram`.`tunnel_metric_snapshots` (
   `connections` UInt32,
   `consumers` UInt32,
   `substreams` UInt32,
-  `diagnostics_available` UInt32,
-  `targets_unreachable` UInt32,
   `connections_opened` UInt64
 ) ENGINE = ReplacingMergeTree(revision)
 PRIMARY KEY (`gram_project_id`, `source_id`, `bucket`, `kind`, `producer_id`, `server_id`, `method`, `client_family`) ORDER BY (`gram_project_id`, `source_id`, `bucket`, `kind`, `producer_id`, `server_id`, `method`, `client_family`) PARTITION BY (toDate(bucket)) TTL bucket + toIntervalDay(7) SETTINGS index_granularity = 8192;

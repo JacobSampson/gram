@@ -101260,7 +101260,6 @@ components:
             - available
             - unavailable
             - too_large
-            - disabled
       required:
         - state
         - observed_at

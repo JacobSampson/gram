@@ -530,7 +530,7 @@ func (p *Proxy) Post(w http.ResponseWriter, r *http.Request) (err error) {
 		outcome := "incomplete"
 		if r.Context().Err() != nil {
 			outcome = "canceled"
-		} else if err != nil || upstreamStatus >= 400 {
+		} else if err != nil {
 			outcome = "error"
 		}
 		observation.finish(outcome)
