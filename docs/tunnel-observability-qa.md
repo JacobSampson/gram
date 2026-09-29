@@ -196,7 +196,7 @@ Fresh local verification:
 | Check                                                             | Result                                  |
 | ----------------------------------------------------------------- | --------------------------------------- |
 | Focused backend suite (proxy, manager, model views, storage, API) | 610 passed                              |
-| Dashboard feature and collapsed-assistant tests                   | 30 passed                               |
+| Dashboard feature, query-failure and assistant tests              | 43 passed                               |
 | Dashboard type check and pinned server lint                       | Passed; linter deprecation warning only |
 | Agent, wire, collector, gateway and route race tests              | Passed                                  |
 | Publisher final-flush/stop ordering race test                     | Passed                                  |
@@ -207,7 +207,7 @@ Fresh local verification:
 | Near-full yamux pressure                                          | 232 held streams, 70-second hold passed |
 
 Final matrix reports are local-only under
-`/tmp/gram-tunnel-cubic/run.BkaYKiR3/final-{old-src,main-src,new-src,new-src-nodiag}/report.json`;
+`/tmp/gram-tunnel-cubic/run.BkaYKiR3/reviewed-{old-src,main-src,new-src,new-src-nodiag}/report.json`;
 faults and pressure/rollback reports are under `faults/` and
 `transitions-nearfull/` in the same root. Build/image provenance is retained in
 that run directory. Logs are `/tmp/tunnel-cubic-*.log`. These paths are not durable
@@ -218,7 +218,10 @@ response from frozen gateways; it now requires legacy 200 or new 404 explicitly.
 Two earlier post-burst idle checks observed 63 target TCP accepts with zero HTTP.
 An isolated rerun passed. The first final matrix measures idle before burst traffic and
 all 24 pairs pass. A review follow-up adds a second, at least 35-second HTTP-idle
-window after traffic; its full 24-pair rerun is recorded below when complete. Late speculative dials are a possible explanation, not a proven
+window after traffic. All 24 expanded pairs pass (664 checks), including zero
+target HTTP requests during every post-traffic window. The harness source is
+committed at `5dc842c647`; the reviewed harness binary SHA-256 is
+`c7281b61c74f3d27751a095c8a24fb59f9eadf36690c1e40cff354cd354514a7`. Late speculative dials are a possible explanation, not a proven
 cause; original reports remain alongside the final runs.
 
 The refreshed history capture exercises 1 hour, 24 hours, 7 days, the data table
@@ -244,5 +247,16 @@ and [target checks](https://github.com/speakeasy-api/gram/pull/6874#issuecomment
 Both 12-second GIF URLs returned HTTP 200 with image/gif and bytes matching the
 locally inspected exports.
 
-Fresh independent completion review verdicts will be recorded after reviewers
-finish inspecting the final artifacts.
+Fresh independent reviewers ran in visible Herdr panels using `claude-danger`
+and `codex-danger`, with requirements and artifact paths but no inherited working
+conversation. Both passed the corrected implementation and demos on re-review.
+Claude additionally ran 211 dashboard-tab tests and checked the published GIF
+hashes; Codex independently reran 610 backend tests, tunnel race tests, the new
+query regressions and dashboard type checking, and verified all 24 expanded
+compatibility reports. Review findings and their fixes are recorded above.
+
+Remaining limits: metrics are bounded best-effort observations, previous-boot loss
+cannot be quantified, and idle transport reachability does not prove MCP success.
+Raw compatibility evidence is local-only, and earlier TCP-only anomalies retain
+unproven causes. Production IAM, image publication, network canaries and fleet
+capacity remain rollout work; this follow-up does not claim those gates passed.

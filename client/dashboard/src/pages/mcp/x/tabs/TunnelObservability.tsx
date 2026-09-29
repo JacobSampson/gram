@@ -461,6 +461,7 @@ function latencyLabel(value?: number | null) {
 
 function stepLabel(step?: TunnelDiagnosticStep) {
   switch (step?.state) {
+    case "not_tested":
     case undefined:
       return "Not checked";
     case "pass":
