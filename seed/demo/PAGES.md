@@ -143,8 +143,10 @@ Browser verification: `[~]` (not yet verified); see check 18 in `verify.md`.
 The same **Fictional release account** provider carries a scope override
 (`releases:read offline_access`), shown on its Overview and editable on its
 Settings tab. Its client sets its own scopes and is flagged as a legacy callback
-client, so the client's pages show the legacy callback warning and its Settings
-tab warns that the client's scopes have no effect. Browser verification: `[~]`.
+client. Platform admins see the legacy callback warning with its Migrate button
+on the client's pages and the compatibility-mode switch on its Settings tab;
+everyone else sees neither. The Settings tab also warns that the client's scopes
+have no effect. Browser verification: `[~]`.
 
 ## Local only (RunLocalFixtures, never the demo org)
 
