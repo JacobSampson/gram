@@ -11169,8 +11169,9 @@ SET
         WHEN $5::text = '' THEN NULL
         ELSE COALESCE($5, audience)
     END,
+    legacy_callback_url = COALESCE($6, legacy_callback_url),
     updated_at = clock_timestamp()
-WHERE id = $6 AND project_id IS NULL AND organization_id IS NULL AND deleted IS FALSE
+WHERE id = $7 AND project_id IS NULL AND organization_id IS NULL AND deleted IS FALSE
 RETURNING id, project_id, organization_id, attachment_scope, remote_session_issuer_id, client_id, client_secret_encrypted, client_id_issued_at, client_secret_expires_at, token_endpoint_auth_method, json_web_key_set_id, scope, grant_types, audience, token_endpoint_auth_audience_format, client_id_metadata_uri, legacy_callback_url, resource_identifier, resource_name, resource_documentation, resource_policy_uri, resource_tos_uri, upstream_rejected_at, identity_provider_connection_id, created_at, updated_at, deleted_at, deleted
 `
 
@@ -11180,6 +11181,7 @@ type UpdateGlobalRemoteSessionClientParams struct {
 	TokenEndpointAuthAudienceFormat pgtype.Text
 	Scope                           []string
 	Audience                        pgtype.Text
+	LegacyCallbackUrl               pgtype.Bool
 	ID                              uuid.UUID
 }
 
@@ -11193,6 +11195,7 @@ func (q *Queries) UpdateGlobalRemoteSessionClient(ctx context.Context, arg Updat
 		arg.TokenEndpointAuthAudienceFormat,
 		arg.Scope,
 		arg.Audience,
+		arg.LegacyCallbackUrl,
 		arg.ID,
 	)
 	var i RemoteSessionClient
@@ -11478,11 +11481,12 @@ SET
         WHEN $5::text = '' THEN NULL
         ELSE COALESCE($5, c.audience)
     END,
+    legacy_callback_url = COALESCE($6, c.legacy_callback_url),
     updated_at = clock_timestamp()
 FROM remote_session_issuers AS i
-WHERE c.id = $6
+WHERE c.id = $7
   AND c.remote_session_issuer_id = i.id
-  AND (i.organization_id = $7 OR c.organization_id = $7)
+  AND (i.organization_id = $8 OR c.organization_id = $8)
   AND c.deleted IS FALSE
   AND i.deleted IS FALSE
 RETURNING c.id, c.project_id, c.organization_id, c.attachment_scope, c.remote_session_issuer_id, c.client_id, c.client_secret_encrypted, c.client_id_issued_at, c.client_secret_expires_at, c.token_endpoint_auth_method, c.json_web_key_set_id, c.scope, c.grant_types, c.audience, c.token_endpoint_auth_audience_format, c.client_id_metadata_uri, c.legacy_callback_url, c.resource_identifier, c.resource_name, c.resource_documentation, c.resource_policy_uri, c.resource_tos_uri, c.upstream_rejected_at, c.identity_provider_connection_id, c.created_at, c.updated_at, c.deleted_at, c.deleted
@@ -11494,6 +11498,7 @@ type UpdateOrganizationRemoteSessionClientParams struct {
 	TokenEndpointAuthAudienceFormat pgtype.Text
 	Scope                           []string
 	Audience                        pgtype.Text
+	LegacyCallbackUrl               pgtype.Bool
 	ID                              uuid.UUID
 	OrganizationID                  pgtype.Text
 }
@@ -11510,6 +11515,7 @@ func (q *Queries) UpdateOrganizationRemoteSessionClient(ctx context.Context, arg
 		arg.TokenEndpointAuthAudienceFormat,
 		arg.Scope,
 		arg.Audience,
+		arg.LegacyCallbackUrl,
 		arg.ID,
 		arg.OrganizationID,
 	)
@@ -11802,8 +11808,9 @@ SET
     token_endpoint_auth_audience_format = COALESCE($4, token_endpoint_auth_audience_format),
     scope = COALESCE($5::text[], scope),
     audience = COALESCE($6, audience),
+    legacy_callback_url = COALESCE($7, legacy_callback_url),
     updated_at = clock_timestamp()
-WHERE id = $7 AND project_id = $8 AND deleted IS FALSE
+WHERE id = $8 AND project_id = $9 AND deleted IS FALSE
 RETURNING id, project_id, organization_id, attachment_scope, remote_session_issuer_id, client_id, client_secret_encrypted, client_id_issued_at, client_secret_expires_at, token_endpoint_auth_method, json_web_key_set_id, scope, grant_types, audience, token_endpoint_auth_audience_format, client_id_metadata_uri, legacy_callback_url, resource_identifier, resource_name, resource_documentation, resource_policy_uri, resource_tos_uri, upstream_rejected_at, identity_provider_connection_id, created_at, updated_at, deleted_at, deleted
 `
 
@@ -11814,6 +11821,7 @@ type UpdateRemoteSessionClientParams struct {
 	TokenEndpointAuthAudienceFormat pgtype.Text
 	Scope                           []string
 	Audience                        pgtype.Text
+	LegacyCallbackUrl               pgtype.Bool
 	ID                              uuid.UUID
 	ProjectID                       uuid.NullUUID
 }
@@ -11829,6 +11837,7 @@ func (q *Queries) UpdateRemoteSessionClient(ctx context.Context, arg UpdateRemot
 		arg.TokenEndpointAuthAudienceFormat,
 		arg.Scope,
 		arg.Audience,
+		arg.LegacyCallbackUrl,
 		arg.ID,
 		arg.ProjectID,
 	)
