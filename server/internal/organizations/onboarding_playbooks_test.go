@@ -14,6 +14,7 @@ import (
 	"github.com/speakeasy-api/gram/server/internal/conv"
 	"github.com/speakeasy-api/gram/server/internal/oops"
 	"github.com/speakeasy-api/gram/server/internal/organizations"
+	orgrepo "github.com/speakeasy-api/gram/server/internal/organizations/repo"
 	"github.com/speakeasy-api/gram/server/internal/urn"
 	"github.com/stretchr/testify/require"
 )
@@ -44,10 +45,10 @@ func TestOnboardingUseCasesAreCreatedByStaff(t *testing.T) {
 	require.Equal(t, "Security & Policies", created.Name)
 	require.Nil(t, created.DefaultPlaybookID)
 
-	for name, slug := range map[string]string{"upper case": "Security", "spaces": "spend controls", "trailing dash": "spend-", "empty": ""} {
+	// Upper case, spaces, a trailing dash and nothing at all are not slugs.
+	for _, slug := range []string{"Security", "spend controls", "spend-", ""} {
 		_, err := organizations.CreateOnboardingUseCase(ctx, ti.conn, slug, "Name", "")
 		requireOopsCode(t, err, oops.CodeBadRequest)
-		_ = name
 	}
 	_, err = organizations.CreateOnboardingUseCase(ctx, ti.conn, "security", "Again", "")
 	requireOopsCode(t, err, oops.CodeConflict)
@@ -158,6 +159,14 @@ func TestOnboardingPlaybookAssignmentFollowsTheStack(t *testing.T) {
 	_, err = organizations.AssignOrganizationOnboardingPlaybook(ctx, ti.conn, audit.NewLogger(), ac.ActiveOrganizationID, &playbookID, actor, nil)
 	requireOopsCode(t, err, oops.CodeBadRequest)
 	require.ErrorContains(t, err, "needs Anthropic")
+	// A card applies when any of its methods matches the stack: Configure
+	// integrations lists Anthropic's API before Cursor's, and Cursor is enough.
+	integrations, err := organizations.CreateOnboardingPlaybook(ctx, ti.conn, organizations.OnboardingPlaybookInput{
+		UseCaseID: nil, OrganizationID: &ac.ActiveOrganizationID, Name: "Integrations", Description: "", IsDefault: false, StepSlugs: []string{"additional-agent-config"},
+	})
+	require.NoError(t, err)
+	_, err = organizations.DeleteOnboardingPlaybook(ctx, ti.conn, mustUUID(t, integrations.ID))
+	require.NoError(t, err)
 
 	// With Anthropic in the stack the assignment lands, and the wizard walks
 	// the playbook in its order with the group's cards.
@@ -225,11 +234,26 @@ func TestOnboardingPlaybookAssignmentFollowsTheStack(t *testing.T) {
 	customID := mustUUID(t, custom.ID)
 	_, err = organizations.AssignOrganizationOnboardingPlaybook(ctx, ti.conn, audit.NewLogger(), "org_someone_else", &customID, actor, nil)
 	require.Error(t, err)
+	// Nor can another organization's copy be copied again for this one.
+	require.NoError(t, orgrepo.New(ti.conn).CreateOrganizationMetadata(ctx, orgrepo.CreateOrganizationMetadataParams{ID: "org_someone_else", Name: "Someone else", Slug: "someone-else"}))
+	theirs, err := organizations.CreateOnboardingPlaybook(ctx, ti.conn, organizations.OnboardingPlaybookInput{
+		UseCaseID: nil, OrganizationID: conv.PtrEmpty("org_someone_else"), Name: "Theirs", Description: "", IsDefault: false, StepSlugs: []string{"enable-logging"},
+	})
+	require.NoError(t, err)
+	_, err = organizations.CloneOnboardingPlaybook(ctx, ti.conn, ac.ActiveOrganizationID, mustUUID(t, theirs.ID), nil)
+	requireOopsCode(t, err, oops.CodeBadRequest)
+	require.ErrorContains(t, err, "another organization")
 
-	// Clearing the assignment returns the wizard to the saved selection.
+	// Clearing the assignment returns the wizard to the saved selection, and
+	// is audited as its own action.
+	clearsBefore, err := audittest.AuditLogCountByAction(ctx, ti.conn, audit.ActionOrganizationOnboardingPlaybookUnassigned)
+	require.NoError(t, err)
 	cleared, err := organizations.AssignOrganizationOnboardingPlaybook(ctx, ti.conn, audit.NewLogger(), ac.ActiveOrganizationID, nil, actor, nil)
 	require.NoError(t, err)
 	require.Nil(t, cleared.Playbook)
+	clearsAfter, err := audittest.AuditLogCountByAction(ctx, ti.conn, audit.ActionOrganizationOnboardingPlaybookUnassigned)
+	require.NoError(t, err)
+	require.Equal(t, clearsBefore+1, clearsAfter)
 	listed, err = ti.service.ListSetupTasks(ctx, &gen.ListSetupTasksPayload{})
 	require.NoError(t, err)
 	require.NotNil(t, setupTask(listed.Tasks, "identity-provider"))

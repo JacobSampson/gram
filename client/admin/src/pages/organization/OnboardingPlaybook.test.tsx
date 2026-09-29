@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OnboardingPlaybook } from "./OnboardingPlaybook";
 import { renderWithApp } from "@/test/harness";
@@ -98,5 +99,21 @@ describe("OnboardingPlaybook", () => {
     await screen.findByText("Unable to load the playbook.");
     fireEvent.click(screen.getByRole("button", { name: "Retry playbook" }));
     await screen.findByText("Not assigned");
+  });
+
+  it("hides a stale name when a refresh fails and retries", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    await renderWithApp(<OnboardingPlaybook organizationId="org_pb_test" />, {
+      queryClient: client,
+    });
+    await screen.findByRole("link", { name: "Not assigned" });
+    failures = 1;
+    await act(() => client.invalidateQueries());
+    await screen.findByText("Unable to load the playbook.");
+    expect(screen.queryByRole("link")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry playbook" }));
+    await screen.findByRole("link", { name: "Not assigned" });
   });
 });

@@ -453,6 +453,9 @@ func CloneOnboardingPlaybook(ctx context.Context, db *pgxpool.Pool, organization
 	if err != nil {
 		return nil, err
 	}
+	if source.OrganizationID != nil && *source.OrganizationID != organizationID {
+		return nil, oops.E(oops.CodeBadRequest, nil, "that playbook belongs to another organization")
+	}
 	slugs := make([]string, 0, len(source.Steps))
 	for _, step := range source.Steps {
 		slugs = append(slugs, step.Slug)
@@ -492,11 +495,9 @@ func stepApplicability(ctx context.Context, queries *repo.Queries, organizationI
 		cardVerdicts[card] = verdict{applies: true, reason: ""}
 	}
 	needs := make(map[string][]string, len(cards))
+	// Every method is weighed: one that matches settles the card, and the
+	// vendors of the ones that do not are what the reason names.
 	for _, method := range methods {
-		current := cardVerdicts[method.StepSlug]
-		if current.reason == "" && !current.applies {
-			continue
-		}
 		if _, first := needs[method.StepSlug]; !first {
 			// The first method seen makes the card conditional.
 			cardVerdicts[method.StepSlug] = verdict{applies: false, reason: ""}

@@ -147,6 +147,7 @@ export const AUDIT_ACTIONS = [
   "organization:onboarding_updated",
   "organization:onboarding_stack_updated",
   "organization:onboarding_playbook_assigned",
+  "organization:onboarding_playbook_unassigned",
   "organization:payg_activated",
   "organization:payg_deactivated",
   "organization:product_feature_disabled",
@@ -623,6 +624,8 @@ export function staticActionPhrase(action: AuditAction): string {
       return "updated the onboarding stack for";
     case "organization:onboarding_playbook_assigned":
       return "assigned an onboarding playbook to";
+    case "organization:onboarding_playbook_unassigned":
+      return "removed the onboarding playbook from";
 
     case "organization_invitation:create":
       return "invited";

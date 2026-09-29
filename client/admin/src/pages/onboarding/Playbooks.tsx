@@ -167,8 +167,9 @@ export function OnboardingPlaybooks({
   // A dialog's failure shows in the dialog; a row action's shows under the tables.
   const [dialogError, setDialogError] = useState("");
   const [actionError, setActionError] = useState("");
-  // The assigned playbook whose highlight has faded. A new assignment is a
-  // different id, so its row is highlighted until its own fade.
+  // The assigned playbook whose highlight has faded. An assignment clears
+  // it, so the newly assigned row is highlighted until its own fade, even
+  // when it is the one that faded before.
   const [fadedId, setFadedId] = useState<string | undefined>(undefined);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useOnUnmount(() => {
@@ -256,7 +257,10 @@ export function OnboardingPlaybooks({
   });
   const assign = useMutation({
     mutationFn: assignAdminOrganizationOnboardingPlaybook,
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh();
+      setFadedId(undefined);
+    },
     onError: failAction,
   });
   const removePlaybook = useMutation({

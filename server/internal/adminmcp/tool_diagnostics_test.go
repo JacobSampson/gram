@@ -78,9 +78,10 @@ func testDiagnosticsReads() *recordingDiagnosticsReader {
 func TestOrganizationOnboardingExactTargetAndRedactedProjection(t *testing.T) {
 	t.Parallel()
 	reads := testDiagnosticsReads()
-	useCase, useCaseName := "distribution", "Distribution"
+	// The id and the slug differ so the projection is seen to pick the slug.
+	useCaseID, useCase, useCaseName := "use-case-uuid-a", "distribution", "Distribution"
 	reads.onboarding.Playbook = &gen.AdminOnboardingPlaybook{
-		ID: "playbook-a", UseCaseID: &useCase, UseCaseSlug: &useCase, UseCaseName: &useCaseName,
+		ID: "playbook-a", UseCaseID: &useCaseID, UseCaseSlug: &useCase, UseCaseName: &useCaseName,
 		Name: "staff-authored playbook name", Description: "private playbook description", IsDefault: true,
 		Steps: []*gen.AdminOnboardingPlaybookStep{{Slug: "platform-mcp", Title: "customer-facing step title"}},
 	}

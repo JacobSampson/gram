@@ -29,6 +29,9 @@ const (
 	ActionOrganizationOnboardingUpdated          Action = "organization:onboarding_updated"
 	ActionOrganizationOnboardingStackUpdated     Action = "organization:onboarding_stack_updated"
 	ActionOrganizationOnboardingPlaybookAssigned Action = "organization:onboarding_playbook_assigned"
+	// ActionOrganizationOnboardingPlaybookUnassigned records the assignment
+	// being cleared: the organization walks its saved selection again.
+	ActionOrganizationOnboardingPlaybookUnassigned Action = "organization:onboarding_playbook_unassigned"
 
 	ActionOrganizationDeviceAgentConfigurationUpdated Action = "organization:device_agent_configuration_updated"
 
@@ -89,10 +92,14 @@ func (l *Logger) LogOrganizationOnboardingPlaybookAssigned(ctx context.Context, 
 	if err != nil {
 		return fmt.Errorf("marshal onboarding playbook after snapshot: %w", err)
 	}
+	action := ActionOrganizationOnboardingPlaybookAssigned
+	if event.PlaybookSnapshotAfter == nil {
+		action = ActionOrganizationOnboardingPlaybookUnassigned
+	}
 	entry := repo.InsertAuditLogParams{
 		OrganizationID: event.OrganizationID, ProjectID: uuid.NullUUID{UUID: uuid.Nil, Valid: false},
 		ActorID: event.Actor.ID, ActorType: string(event.Actor.Type), ActorDisplayName: conv.PtrToPGTextEmpty(event.ActorDisplayName), ActorSlug: conv.ToPGTextEmpty(""),
-		Action: string(ActionOrganizationOnboardingPlaybookAssigned), SubjectID: event.OrganizationID, SubjectType: "organization",
+		Action: string(action), SubjectID: event.OrganizationID, SubjectType: "organization",
 		SubjectDisplayName: conv.ToPGTextEmpty(event.OrganizationName), SubjectSlug: conv.ToPGTextEmpty(event.OrganizationSlug),
 		Metadata: nil, BeforeSnapshot: before, AfterSnapshot: after,
 	}

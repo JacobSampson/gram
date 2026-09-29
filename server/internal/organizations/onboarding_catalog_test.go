@@ -158,6 +158,7 @@ func TestSetupTaskCatalogListsPrerequisitesFirst(t *testing.T) {
 	}
 	for _, card := range setupTaskCatalog {
 		for _, prerequisite := range card.Prerequisites {
+			require.Contains(t, position, prerequisite, "card %q needs %q, which the catalog does not define", card.Key, prerequisite)
 			require.Less(t, position[prerequisite], position[card.Key], "card %q needs %q before it", card.Key, prerequisite)
 		}
 	}

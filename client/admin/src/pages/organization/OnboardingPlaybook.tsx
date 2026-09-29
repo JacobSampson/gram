@@ -28,7 +28,9 @@ export function OnboardingPlaybook({
       </span>
     );
   }
-  if (!assigned.data) {
+  // A failed refresh hides the stale name too: the row is the truth about
+  // what the wizard walks, so it offers the retry instead.
+  if (!assigned.data || assigned.isError) {
     return (
       <div
         role="alert"
